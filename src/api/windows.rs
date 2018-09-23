@@ -192,7 +192,7 @@ mod tests {
     #[test]
     fn dir_test() {
         let src_path = file!();
-        assert_eq!(src_path, "shiori3_api\\src\\windows.rs");
+        assert_eq!(src_path, "src\\api\\windows.rs");
         /*
         let mut native_path = current_dir().unwrap();
         native_path.pop();

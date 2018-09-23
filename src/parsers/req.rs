@@ -3,7 +3,7 @@ use pest::iterators::FlatPairs;
 use pest::Parser;
 use std::collections::HashMap;
 
-use shiori::*;
+use super::shiori::{Rule, ShioriParser};
 
 pub type Error = pest::error::Error<Rule>;
 pub use pest::error::ErrorVariant;

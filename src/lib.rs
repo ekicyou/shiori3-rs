@@ -13,4 +13,6 @@ extern crate pest;
 #[cfg(any(windows))]
 extern crate winapi;
 
+mod api;
 mod hglobal;
+mod parsers;
