@@ -14,18 +14,6 @@ pub enum ErrorKind {
     NotInitialized,
     #[fail(display = "Poison error")]
     Poison,
-    #[fail(display = "IO error")]
-    Io,
-    #[fail(display = "Serde error")]
-    Serde,
-    #[fail(display = "Hyper error")]
-    Hyper,
-    #[fail(display = "Cannot parse uri")]
-    UrlParse,
-    #[fail(display = "askama error")]
-    Askama,
-    #[fail(display = "service error")]
-    ParseRequest(::parsers::req::Error),
 
     #[fail(display = "ANSI encodeing error")]
     EncodeAnsi,

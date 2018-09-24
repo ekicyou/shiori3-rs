@@ -1,9 +1,9 @@
 #[cfg(debug_assertions)]
-const _GRAMMAR: &'static str = include_str!("shiori.pest");
+const _GRAMMAR: &'static str = include_str!("req_parser.pest");
 
 #[derive(Parser)]
-#[grammar = "parsers/shiori.pest"]
-pub struct ShioriParser;
+#[grammar = "parsers/req_parser.pest"]
+pub struct ShioriRequestParser;
 
 #[cfg(test)]
 mod tests {
@@ -12,7 +12,7 @@ mod tests {
 
     #[test]
     fn id_1() {
-        let items = ShioriParser::parse(Rule::id, "a1")
+        let items = ShioriRequestParser::parse(Rule::id, "a1")
             .unwrap_or_else(|e| panic!("{}", e))
             .collect::<Vec<_>>();
         assert_eq!(items.len(), 1);
@@ -28,7 +28,7 @@ mod tests {
 
     #[test]
     fn id_2() {
-        let items = ShioriParser::parse(Rule::id, "感じの良いID")
+        let items = ShioriRequestParser::parse(Rule::id, "感じの良いID")
             .unwrap_or_else(|e| panic!("{}", e))
             .collect::<Vec<_>>();
         assert_eq!(items.len(), 1);
@@ -44,7 +44,7 @@ mod tests {
 
     #[test]
     fn id_3() {
-        let mut it = ShioriParser::parse(Rule::id, "Ref-123.a23")
+        let mut it = ShioriRequestParser::parse(Rule::id, "Ref-123.a23")
             .unwrap_or_else(|e| panic!("{}", e))
             .flatten();
 
@@ -57,7 +57,7 @@ mod tests {
 
     #[test]
     fn remain_1() {
-        let mut items = ShioriParser::parse(Rule::remain, "ABC\r\n")
+        let mut items = ShioriRequestParser::parse(Rule::remain, "ABC\r\n")
             .unwrap_or_else(|e| panic!("{}", e))
             .flatten();
 
@@ -70,7 +70,7 @@ mod tests {
 
     #[test]
     fn remain_2() {
-        let mut items = ShioriParser::parse(Rule::remain, "ABC\rABCD\r\n")
+        let mut items = ShioriRequestParser::parse(Rule::remain, "ABC\rABCD\r\n")
             .unwrap_or_else(|e| panic!("{}", e))
             .flatten();
 
@@ -83,7 +83,7 @@ mod tests {
 
     #[test]
     fn method_1() {
-        let items = ShioriParser::parse(Rule::method, "GET")
+        let items = ShioriRequestParser::parse(Rule::method, "GET")
             .unwrap_or_else(|e| panic!("{}", e))
             .collect::<Vec<_>>();
         assert_eq!(items.len(), 1);
@@ -103,7 +103,7 @@ mod tests {
 
     #[test]
     fn method_2() {
-        let items = ShioriParser::parse(Rule::method, "NOTIFY")
+        let items = ShioriRequestParser::parse(Rule::method, "NOTIFY")
             .unwrap_or_else(|e| panic!("{}", e))
             .collect::<Vec<_>>();
         assert_eq!(items.len(), 1);
@@ -123,7 +123,7 @@ mod tests {
 
     #[test]
     fn header_1() {
-        let items = ShioriParser::parse(Rule::header, "GET OPEN SHIORI/2.6\r\n")
+        let items = ShioriRequestParser::parse(Rule::header, "GET OPEN SHIORI/2.6\r\n")
             .unwrap_or_else(|e| panic!("{}", e))
             .collect::<Vec<_>>();
         assert_eq!(items.len(), 1);
@@ -161,7 +161,7 @@ mod tests {
 
     #[test]
     fn header_2() {
-        let items = ShioriParser::parse(Rule::header, "NOTIFY SHIORI/3.0\r\n")
+        let items = ShioriRequestParser::parse(Rule::header, "NOTIFY SHIORI/3.0\r\n")
             .unwrap_or_else(|e| panic!("{}", e))
             .collect::<Vec<_>>();
         assert_eq!(items.len(), 1);
@@ -189,7 +189,7 @@ mod tests {
 
     #[test]
     fn key_1() {
-        let items = ShioriParser::parse(Rule::key, "感じの良いID")
+        let items = ShioriRequestParser::parse(Rule::key, "感じの良いID")
             .unwrap_or_else(|e| panic!("{}", e))
             .collect::<Vec<_>>();
         assert_eq!(items.len(), 1);
@@ -205,7 +205,7 @@ mod tests {
 
     #[test]
     fn key_2() {
-        let items = ShioriParser::parse(Rule::key, "IDの感じ")
+        let items = ShioriRequestParser::parse(Rule::key, "IDの感じ")
             .unwrap_or_else(|e| panic!("{}", e))
             .collect::<Vec<_>>();
         assert_eq!(items.len(), 1);
@@ -221,7 +221,7 @@ mod tests {
 
     #[test]
     fn key_3() {
-        let mut it = ShioriParser::parse(Rule::key, "Reference123:")
+        let mut it = ShioriRequestParser::parse(Rule::key, "Reference123:")
             .unwrap_or_else(|e| panic!("{}", e))
             .flatten();
 
@@ -238,7 +238,7 @@ mod tests {
 
     #[test]
     fn key_4() {
-        let mut it = ShioriParser::parse(Rule::key, "Reference123の感じ")
+        let mut it = ShioriRequestParser::parse(Rule::key, "Reference123の感じ")
             .unwrap_or_else(|e| panic!("{}", e))
             .flatten();
 
@@ -251,7 +251,7 @@ mod tests {
 
     #[test]
     fn key_value_1() {
-        let items = ShioriParser::parse(Rule::key_value, "IDは: XYZですよ\r\n")
+        let items = ShioriRequestParser::parse(Rule::key_value, "IDは: XYZですよ\r\n")
             .unwrap_or_else(|e| panic!("{}", e))
             .collect::<Vec<_>>();
         assert_eq!(items.len(), 1);
@@ -282,7 +282,7 @@ mod tests {
             .replace("\r", "\n")
             .replace("\n", "\r\n");
         let grammar = src.as_str();
-        let items = ShioriParser::parse(Rule::req, grammar)
+        let items = ShioriRequestParser::parse(Rule::req, grammar)
             .unwrap_or_else(|e| panic!("{}", e))
             .collect::<Vec<_>>();
         assert_eq!(items.len(), 1);
@@ -331,7 +331,7 @@ mod tests {
             .replace("\r", "\n")
             .replace("\n", "\r\n");
         let grammar = src.as_str();
-        let mut items = ShioriParser::parse(Rule::req, grammar)
+        let mut items = ShioriRequestParser::parse(Rule::req, grammar)
             .unwrap_or_else(|e| panic!("{}", e))
             .flatten();
 
@@ -392,7 +392,7 @@ mod tests {
             .replace("\r", "\n")
             .replace("\n", "\r\n");
         let grammar = src.as_str();
-        let mut items = ShioriParser::parse(Rule::req, grammar)
+        let mut items = ShioriRequestParser::parse(Rule::req, grammar)
             .unwrap_or_else(|e| panic!("{}", e))
             .flatten();
 
