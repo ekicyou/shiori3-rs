@@ -27,12 +27,10 @@ pub enum ErrorKind {
     #[fail(display = "service error")]
     Service,
 
-    #[fail(display = "GStr error, impl({:?})", _0)]
-    GStr(::hglobal::GStrError),
     #[fail(display = "ANSI encodeing error")]
-    AnsiEncode,
+    EncodeAnsi,
     #[fail(display = "UTF8 encodeing error")]
-    Utf8Encode(#[fail(cause)] Utf8Error),
+    EncodeUtf8(#[fail(cause)] Utf8Error),
 }
 
 impl<G> From<PoisonError<G>> for Error {
@@ -40,15 +38,10 @@ impl<G> From<PoisonError<G>> for Error {
         Error::from(ErrorKind::Poison)
     }
 }
-impl From<::hglobal::GStrError> for Error {
-    fn from(error: ::hglobal::GStrError) -> Error {
-        Error::from(ErrorKind::GStr(error))
-    }
-}
 impl From<Utf8Error> for Error {
     fn from(error: Utf8Error) -> Error {
         Error {
-            inner: error.context(ErrorKind::Utf8Encode(error)),
+            inner: error.context(ErrorKind::EncodeUtf8(error)),
         }
     }
 }
