@@ -6,7 +6,7 @@ use std::sync::PoisonError;
 
 pub type ShioriResult<T> = Result<T, Error>;
 
-#[derive(Copy, Clone, Eq, PartialEq, Debug, Fail)]
+#[derive(Clone, Eq, PartialEq, Debug, Fail)]
 pub enum ErrorKind {
     #[fail(display = "others error")]
     Others,
@@ -25,7 +25,7 @@ pub enum ErrorKind {
     #[fail(display = "askama error")]
     Askama,
     #[fail(display = "service error")]
-    Service,
+    ParseRequest(::parsers::req::Error),
 
     #[fail(display = "ANSI encodeing error")]
     EncodeAnsi,
