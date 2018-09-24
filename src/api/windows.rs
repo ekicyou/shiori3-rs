@@ -1,5 +1,5 @@
 use super::api::Shiori3;
-use super::error::*;
+use error::*;
 use hglobal::GStr;
 use std::ptr;
 use std::sync::atomic::{AtomicUsize, Ordering};

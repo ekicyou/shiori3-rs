@@ -14,5 +14,6 @@ extern crate pest;
 extern crate winapi;
 
 mod api;
+mod error;
 mod hglobal;
 mod parsers;

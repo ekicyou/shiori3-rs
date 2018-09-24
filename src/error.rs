@@ -1,5 +1,4 @@
 use failure::{Backtrace, Context, Fail};
-use hglobal::GStrError;
 use std::fmt;
 use std::fmt::Display;
 use std::sync::PoisonError;
@@ -15,7 +14,7 @@ pub enum ErrorKind {
     #[fail(display = "Poison error")]
     Poison,
     #[fail(display = "GStr error, impl({:?})", _0)]
-    GStr(GStrError),
+    GStr(::hglobal::GStrError),
     #[fail(display = "IO error")]
     Io,
     #[fail(display = "Serde error")]
@@ -35,8 +34,8 @@ impl<G> From<PoisonError<G>> for Error {
         Error::from(ErrorKind::Poison)
     }
 }
-impl From<GStrError> for Error {
-    fn from(error: GStrError) -> Error {
+impl From<::hglobal::GStrError> for Error {
+    fn from(error: ::hglobal::GStrError) -> Error {
         Error::from(ErrorKind::GStr(error))
     }
 }

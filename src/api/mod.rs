@@ -1,5 +1,4 @@
 mod api;
-pub mod error;
 #[cfg(any(windows))]
 mod windows;
 
