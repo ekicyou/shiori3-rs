@@ -24,12 +24,14 @@ pub struct ShioriRequest<'a> {
 }
 
 impl<'a> ShioriRequest<'a> {
+    #[allow(dead_code)]
     pub fn parse(text: &'a str) -> Result<ShioriRequest<'a>, PestError> {
         let rc = ShioriRequest::new(text);
         let it = ShioriRequestParser::parse(Rule::req, text)?.flatten();
         rc.parse1(it)
     }
 
+    #[allow(dead_code)]
     fn new(text: &'a str) -> ShioriRequest<'a> {
         ShioriRequest {
             text: text,
@@ -47,6 +49,7 @@ impl<'a> ShioriRequest<'a> {
         }
     }
 
+    #[allow(dead_code)]
     fn parse1(mut self, mut it: FlatPairs<'a, Rule>) -> Result<ShioriRequest<'a>, PestError> {
         let pair = match it.next() {
             Some(a) => a,
@@ -76,6 +79,7 @@ impl<'a> ShioriRequest<'a> {
         self.parse1(it)
     }
 
+    #[allow(dead_code)]
     fn parse_key_value(&mut self, it: &mut FlatPairs<'a, Rule>) -> Result<(), PestError> {
         let pair = it.next().unwrap();
         let rule = pair.as_rule();

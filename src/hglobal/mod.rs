@@ -70,6 +70,7 @@ impl GStr {
 
     /// HGLOBALを新たに作成し、textをGStrにクローンします。
     /// drop時にHGLOBALを開放します。
+    #[allow(dead_code)]
     pub fn clone_from_str<'a, S: Into<&'a str>>(text: S) -> GStr {
         let s = text.into();
         let bytes = s.as_bytes();
@@ -78,6 +79,7 @@ impl GStr {
 
     /// HGLOBALを新たに作成し、textをGStrにクローンします。
     /// drop時にHGLOBALを開放しません。
+    #[allow(dead_code)]
     pub fn clone_from_str_nofree<'a, S: Into<&'a str>>(text: S) -> GStr {
         let s = text.into();
         let bytes = s.as_bytes();

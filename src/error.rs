@@ -8,6 +8,7 @@ pub type ShioriResult<T> = Result<T, Error>;
 
 #[derive(Clone, Eq, PartialEq, Debug, Fail)]
 pub enum ErrorKind {
+    #[allow(dead_code)]
     #[fail(display = "others error")]
     Others,
     #[fail(display = "not initialized error")]
@@ -57,10 +58,12 @@ impl Display for Error {
 }
 
 impl Error {
+    #[allow(dead_code)]
     pub fn new(inner: Context<ErrorKind>) -> Error {
         Error { inner }
     }
 
+    #[allow(dead_code)]
     pub fn kind(&self) -> &ErrorKind {
         self.inner.get_context()
     }
