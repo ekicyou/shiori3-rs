@@ -1,6 +1,7 @@
 use failure::{Backtrace, Context, Fail};
 use std::fmt;
 use std::fmt::Display;
+use std::str::Utf8Error;
 use std::sync::PoisonError;
 
 pub type ShioriResult<T> = Result<T, Error>;
@@ -13,8 +14,6 @@ pub enum ErrorKind {
     NotInitialized,
     #[fail(display = "Poison error")]
     Poison,
-    #[fail(display = "GStr error, impl({:?})", _0)]
-    GStr(::hglobal::GStrError),
     #[fail(display = "IO error")]
     Io,
     #[fail(display = "Serde error")]
@@ -27,6 +26,13 @@ pub enum ErrorKind {
     Askama,
     #[fail(display = "service error")]
     Service,
+
+    #[fail(display = "GStr error, impl({:?})", _0)]
+    GStr(::hglobal::GStrError),
+    #[fail(display = "ANSI encodeing error")]
+    AnsiEncode,
+    #[fail(display = "UTF8 encodeing error")]
+    Utf8Encode(#[fail(cause)] Utf8Error),
 }
 
 impl<G> From<PoisonError<G>> for Error {
@@ -37,6 +43,13 @@ impl<G> From<PoisonError<G>> for Error {
 impl From<::hglobal::GStrError> for Error {
     fn from(error: ::hglobal::GStrError) -> Error {
         Error::from(ErrorKind::GStr(error))
+    }
+}
+impl From<Utf8Error> for Error {
+    fn from(error: Utf8Error) -> Error {
+        Error {
+            inner: error.context(ErrorKind::Utf8Encode(error)),
+        }
     }
 }
 
