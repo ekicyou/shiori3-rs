@@ -1,8 +1,10 @@
 #![cfg(any(windows))]
 mod enc;
+mod error;
 mod windows;
 
 use self::enc::{Encoder, Encoding};
+pub use self::error::GStrError;
 use std::ffi::OsString;
 use std::str;
 use winapi::_core::mem::transmute;
@@ -13,17 +15,6 @@ use winapi::um::winbase::{GlobalAlloc, GlobalFree};
 use winapi::vc::vcruntime::size_t;
 
 const GMEM_FIXED: UINT = 0;
-
-#[derive(Copy, Eq, PartialEq, Clone, Debug)]
-pub enum GStrError {
-    AnsiEncode,
-    Utf8Encode(Utf8Error),
-}
-impl From<Utf8Error> for GStrError {
-    fn from(err: Utf8Error) -> GStrError {
-        GStrError::Utf8Encode(err)
-    }
-}
 
 /// HGLOBALを文字列にキャプチャーします。
 pub struct GStr {
