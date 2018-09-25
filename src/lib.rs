@@ -18,6 +18,8 @@ mod error;
 mod hglobal;
 mod parsers;
 
+#[cfg(any(windows))]
+pub use api::RawAPI;
 pub use api::Shiori3;
 pub use error::Error as ShioriError;
 pub use error::ErrorKind as ShioriErrorKind;
