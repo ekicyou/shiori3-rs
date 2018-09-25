@@ -8,9 +8,6 @@ keywords = ["ghost", "shiori", "ukagaka"]
 license = "MIT"
 readme = "README.md"
 
-[workspace]
-members = [".", "emo"]
-
 [dependencies]
 log = "0.4"
 failure = "0.1"
