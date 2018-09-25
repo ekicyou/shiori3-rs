@@ -52,7 +52,7 @@ impl<TS: Shiori3> RawAPI<TS> {
         *locked = None;
         let g_dir = GStr::capture(h_dir, l_dir);
         let dir = g_dir.to_ansi_str()?;
-        let shiori = TS::new(self.get_h_inst(), dir)?;
+        let shiori = TS::load(self.get_h_inst(), dir)?;
         *locked = Some(shiori);
         Ok(())
     }
@@ -134,7 +134,7 @@ mod tests {
         fn drop(&mut self) {}
     }
     impl Shiori3 for TestShiori {
-        fn new<P: AsRef<Path>>(h_inst: usize, load_dir: P) -> ShioriResult<Self> {
+        fn load<P: AsRef<Path>>(h_inst: usize, load_dir: P) -> ShioriResult<Self> {
             let shiori = TestShiori {
                 h_inst: h_inst,
                 load_dir: load_dir.as_ref().to_path_buf(),
