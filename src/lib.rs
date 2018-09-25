@@ -17,3 +17,8 @@ mod api;
 mod error;
 mod hglobal;
 mod parsers;
+
+pub use api::Shiori3;
+pub use error::Error as ShioriError;
+pub use error::ErrorKind as ShioriErrorKind;
+pub use error::ShioriResult;
