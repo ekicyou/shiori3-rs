@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use std::fmt::Debug;
 use std::path::Path;
 
-pub trait Shiori3: Drop + Sized + Debug {
+pub trait Shiori3: Drop + Sized {
     /// 新しいSHIORIインスタンスを作成します。
     fn load<P: AsRef<Path>>(h_inst: usize, load_dir: P) -> ShioriResult<Self>;
 
