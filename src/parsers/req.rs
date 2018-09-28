@@ -4,7 +4,7 @@ use pest::iterators::FlatPairs;
 use pest::Parser;
 use std::collections::HashMap;
 
-pub type PestError = pest::error::Error<Rule>;
+pub type ParseRequestError = pest::error::Error<Rule>;
 
 /// SHIORI3リクエストの解析結果を格納します。
 #[derive(PartialEq, Eq, Debug)]
@@ -25,7 +25,7 @@ pub struct ShioriRequest<'a> {
 
 impl<'a> ShioriRequest<'a> {
     #[allow(dead_code)]
-    pub fn parse(text: &'a str) -> Result<ShioriRequest<'a>, PestError> {
+    pub fn parse(text: &'a str) -> Result<ShioriRequest<'a>, ParseRequestError> {
         let rc = ShioriRequest::new(text);
         let it = ShioriRequestParser::parse(Rule::req, text)?.flatten();
         rc.parse1(it)
@@ -50,7 +50,10 @@ impl<'a> ShioriRequest<'a> {
     }
 
     #[allow(dead_code)]
-    fn parse1(mut self, mut it: FlatPairs<'a, Rule>) -> Result<ShioriRequest<'a>, PestError> {
+    fn parse1(
+        mut self,
+        mut it: FlatPairs<'a, Rule>,
+    ) -> Result<ShioriRequest<'a>, ParseRequestError> {
         let pair = match it.next() {
             Some(a) => a,
             None => return Ok(self),
@@ -80,7 +83,7 @@ impl<'a> ShioriRequest<'a> {
     }
 
     #[allow(dead_code)]
-    fn parse_key_value(&mut self, it: &mut FlatPairs<'a, Rule>) -> Result<(), PestError> {
+    fn parse_key_value(&mut self, it: &mut FlatPairs<'a, Rule>) -> Result<(), ParseRequestError> {
         let pair = it.next().unwrap();
         let rule = pair.as_rule();
         let key = pair.as_str();

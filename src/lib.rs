@@ -22,3 +22,4 @@ pub use api::Shiori3;
 pub use error::Error as ShioriError;
 pub use error::ErrorKind as ShioriErrorKind;
 pub use error::ShioriResult;
+pub use parsers::req::ShioriRequest;
