@@ -1,3 +1,4 @@
+use super::parsers;
 use failure::{Backtrace, Context, Fail};
 use std::fmt;
 use std::fmt::Display;
@@ -16,12 +17,22 @@ pub enum ErrorKind {
     #[fail(display = "Poison error")]
     Poison,
 
+    #[fail(display = "parse request error")]
+    ParseRequest(#[fail(cause)] parsers::req::ParseError),
+
     #[fail(display = "ANSI encodeing error")]
     EncodeAnsi,
     #[fail(display = "UTF8 encodeing error")]
     EncodeUtf8(#[fail(cause)] Utf8Error),
 }
 
+impl From<parsers::req::ParseError> for Error {
+    fn from(error: parsers::req::ParseError) -> Error {
+        Error {
+            inner: error.context(ErrorKind::ParseRequest(error)),
+        }
+    }
+}
 impl<G> From<PoisonError<G>> for Error {
     fn from(_error: PoisonError<G>) -> Error {
         Error::from(ErrorKind::Poison)
