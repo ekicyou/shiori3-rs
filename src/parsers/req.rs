@@ -1,4 +1,6 @@
 use super::req_parser::{Rule, ShioriRequestParser};
+use error::*;
+use failure::{Context, Fail};
 use pest;
 use pest::iterators::FlatPairs;
 use pest::Parser;
@@ -25,10 +27,10 @@ pub struct ShioriRequest<'a> {
 
 impl<'a> ShioriRequest<'a> {
     #[allow(dead_code)]
-    pub fn parse(text: &'a str) -> Result<ShioriRequest<'a>, ParseError> {
+    pub fn parse(text: &'a str) -> ShioriResult<ShioriRequest<'a>> {
         let rc = ShioriRequest::new(text);
         let it = ShioriRequestParser::parse(Rule::req, text)?.flatten();
-        rc.parse1(it)
+        Ok(rc.parse1(it)?)
     }
 
     #[allow(dead_code)]
@@ -50,7 +52,7 @@ impl<'a> ShioriRequest<'a> {
     }
 
     #[allow(dead_code)]
-    fn parse1(mut self, mut it: FlatPairs<'a, Rule>) -> Result<ShioriRequest<'a>, ParseError> {
+    fn parse1(mut self, mut it: FlatPairs<'a, Rule>) -> ShioriResult<ShioriRequest<'a>> {
         let pair = match it.next() {
             Some(a) => a,
             None => return Ok(self),
@@ -80,7 +82,7 @@ impl<'a> ShioriRequest<'a> {
     }
 
     #[allow(dead_code)]
-    fn parse_key_value(&mut self, it: &mut FlatPairs<'a, Rule>) -> Result<(), ParseError> {
+    fn parse_key_value(&mut self, it: &mut FlatPairs<'a, Rule>) -> ShioriResult<()> {
         let pair = it.next().unwrap();
         let rule = pair.as_rule();
         let key = pair.as_str();

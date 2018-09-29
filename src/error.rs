@@ -17,7 +17,7 @@ pub enum ErrorKind {
     #[fail(display = "Poison error")]
     Poison,
 
-    #[fail(display = "parse request error")]
+    #[fail(display = "Shiori request parse error")]
     ParseRequest(#[fail(cause)] parsers::req::ParseError),
 
     #[fail(display = "ANSI encodeing error")]
@@ -28,11 +28,13 @@ pub enum ErrorKind {
 
 impl From<parsers::req::ParseError> for Error {
     fn from(error: parsers::req::ParseError) -> Error {
+        let cp = error.clone();
         Error {
-            inner: error.context(ErrorKind::ParseRequest(error)),
+            inner: error.context(ErrorKind::ParseRequest(cp)),
         }
     }
 }
+
 impl<G> From<PoisonError<G>> for Error {
     fn from(_error: PoisonError<G>) -> Error {
         Error::from(ErrorKind::Poison)
