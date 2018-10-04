@@ -12,8 +12,8 @@ readme = "README.md"
 log = "0.4"
 failure = "0.1"
 failure_derive = "0.1"
-pest = { git = "https://github.com/pest-parser/pest", branch = "master" }
-pest_derive = { git = "https://github.com/pest-parser/pest", branch = "master" }
+pest = "2.0"
+pest_derive = "2.0"
 
 [target."cfg(windows)".dependencies]
 winapi = {version = "0.3", features = [ "winbase", "stringapiset", ] }
