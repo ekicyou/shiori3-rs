@@ -12,8 +12,10 @@ pub enum ErrorKind {
     #[allow(dead_code)]
     #[fail(display = "others error")]
     Others,
+
     #[fail(display = "not initialized error")]
     NotInitialized,
+
     #[fail(display = "Poison error")]
     Poison,
 
