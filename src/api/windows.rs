@@ -50,9 +50,9 @@ impl<TS: Shiori3> RawAPI<TS> {
     fn load(&self, h_dir: HGLOBAL, l_dir: usize) -> ShioriResult<()> {
         let mut locked = self.shiori.lock()?;
         *locked = None;
-        let g_dir = GStr::capture(h_dir, l_dir);
-        let dir = g_dir.to_ansi_str()?;
-        let shiori = TS::load(self.get_h_inst(), dir)?;
+        let gstr = GStr::capture(h_dir, l_dir);
+        let ansi = gstr.to_ansi_str()?;
+        let shiori = TS::load(self.get_h_inst(), ansi)?;
         *locked = Some(shiori);
         Ok(())
     }
