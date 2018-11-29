@@ -13,6 +13,9 @@ pub enum ErrorKind {
     #[fail(display = "others error")]
     Others,
 
+    #[fail(display = "load error")]
+    Load,
+
     #[fail(display = "not initialized error")]
     NotInitialized,
 
