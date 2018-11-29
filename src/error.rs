@@ -13,6 +13,7 @@ pub enum ErrorKind {
     #[fail(display = "others error")]
     Others,
 
+    #[allow(dead_code)]
     #[fail(display = "load error")]
     Load,
 
