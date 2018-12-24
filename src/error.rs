@@ -30,6 +30,10 @@ pub enum ErrorKind {
     EncodeAnsi,
     #[fail(display = "UTF8 encodeing error")]
     EncodeUtf8(#[fail(cause)] Utf8Error),
+
+    #[allow(dead_code)]
+    #[fail(display = "script error: {}", message)]
+    Script { message: String },
 }
 
 impl From<parsers::req::ParseError> for Error {
@@ -51,6 +55,14 @@ impl From<Utf8Error> for Error {
         Error {
             inner: error.context(ErrorKind::EncodeUtf8(error)),
         }
+    }
+}
+
+impl Error {
+    #[allow(dead_code)]
+    pub fn script_error(message: String) -> Error {
+        let kind = ErrorKind::Script { message: message };
+        Error::from(kind)
     }
 }
 
