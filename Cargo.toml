@@ -1,7 +1,8 @@
 [package]
 name = "shiori3"
 description = "SHIORI/3.0 rust interface."
-version = "0.2.0"
+version = "0.3.0"
+edition = "2018"
 authors = ["ekicyou <dot.station@gmail.com>"]
 repository = "https://github.com/ekicyou/shiori3-rs"
 keywords = ["ghost", "shiori", "ukagaka"]

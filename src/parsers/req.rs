@@ -1,5 +1,5 @@
 use super::req_parser::{Rule, ShioriRequestParser};
-use error::*;
+use crate::error::*;
 use failure::{Context, Fail};
 use pest;
 use pest::iterators::FlatPairs;

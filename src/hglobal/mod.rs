@@ -3,7 +3,7 @@ mod enc;
 mod windows;
 
 use self::enc::{Encoder, Encoding};
-use error::*;
+use crate::error::*;
 use std::ffi::OsString;
 use std::str;
 use std::str::Utf8Error;

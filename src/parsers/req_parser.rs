@@ -1,6 +1,8 @@
 #[cfg(debug_assertions)]
 const _GRAMMAR: &'static str = include_str!("req_parser.pest");
 
+use pest_derive::*;
+
 #[allow(dead_code)]
 #[derive(Parser)]
 #[grammar = "parsers/req_parser.pest"]

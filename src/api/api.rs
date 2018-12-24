@@ -1,4 +1,4 @@
-use error::ShioriResult;
+use crate::error::ShioriResult;
 use std::borrow::Cow;
 use std::fmt::Debug;
 use std::path::Path;
