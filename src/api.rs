@@ -19,13 +19,13 @@ pub trait Shiori3: Drop + Sized {
     fn request<'a, S: Into<&'a str>>(&mut self, req: S) -> Result<Cow<'a, str>, failure::Error>;
 
     /// shiori.dll:dll_main
-     fn raw_dll_main(
+    fn raw_dll_main(
         &self,
         h_inst: usize,
         ul_reason_for_call: DWORD,
         _lp_reserved: LPVOID,
     ) -> bool {
-        let mut unsafe_self = unsafe_as_mut<T>(self);
+        let mut unsafe_self = unsafe_as_mut(self);
         match ul_reason_for_call {
             DLL_PROCESS_ATTACH => {
                 unsafe_self.set_hinst(h_inst);
@@ -39,8 +39,8 @@ pub trait Shiori3: Drop + Sized {
     }
 
     /// shiori.dll:unload
-     fn raw_unload(&self) -> bool {
-        let mut unsafe_self = unsafe_as_mut<T>(self);
+    fn raw_unload(&self) -> bool {
+        let mut unsafe_self = unsafe_as_mut(self);
         match unsafe_self.unload() {
             Err(e) => {
                 error!("{}", e);
@@ -51,8 +51,8 @@ pub trait Shiori3: Drop + Sized {
     }
 
     /// shiori.dll:load
-         fn raw_load(&self, hdir: HGLOBAL, len: usize) -> bool {
-        let mut unsafe_self = unsafe_as_mut<T>(self);
+    fn raw_load(&self, hdir: HGLOBAL, len: usize) -> bool {
+        let mut unsafe_self = unsafe_as_mut(self);
         match unsafe_self.load(hdir, len) {
             Err(e) => {
                 error!("{}", e);
@@ -63,8 +63,8 @@ pub trait Shiori3: Drop + Sized {
     }
 
     /// shiori.dll:request
-     fn raw_request(&self, h: HGLOBAL, len: &mut usize) -> HGLOBAL {
-        let mut unsafe_self = unsafe_as_mut<T>(self);
+    fn raw_request(&self, h: HGLOBAL, len: &mut usize) -> HGLOBAL {
+        let mut unsafe_self = unsafe_as_mut(self);
         match unsafe_self.request(h, len) {
             Err(e) => {
                 error!("{}", e);
@@ -117,7 +117,7 @@ impl<T: Shiori3> Shiori3 for Shiori3DI<T> {
 }
 
 #[inline]
-fn unsafe_as_mut<T>(&target) -> &mut T {
+fn unsafe_as_mut<T>(target: &T) -> &mut T {
     unsafe{
         let p = target as *const T;
         let p_mut = p as *mut T;
