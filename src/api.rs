@@ -74,7 +74,46 @@ pub trait Shiori3: Drop + Sized {
             Ok(rc) => rc,
         }
     }
+}
 
+struct Shiori3DI<T>
+where
+    T: Shiori3,
+{
+    di: T,
+}
+
+impl<T: Shiori3> Shiori3DI<T> {
+    fn new(T target) -> Shiori3DI<T>
+    {
+        Shiori3DI{ di:target, }
+    }
+}
+
+impl<T: Shiori3> Shiori3 for Shiori3DI<T> {
+    /// hinstを設定します。
+    fn set_hinst(&mut self, hinst: usize) -> Result<(), failure::Error>
+    {
+        self.di.set_hinst(hinst)
+    }
+
+    /// load_dir pathのファイルでSHIORIインスタンスを作成します。
+    fn load<P: AsRef<Path>>(&mut self, load_dir: P) -> Result<(), failure::Error>;
+    {
+        self.di.load(load_dir)
+    }
+
+    /// SHIORIインスタンスを解放します。
+    fn unload(&mut self) -> Result<(), failure::Error>
+    {
+        self.di.unload(dir)
+    }
+
+    /// SHIORIリクエストを解釈し、応答を返します。
+    fn request<'a, S: Into<&'a str>>(&mut self, req: S) -> Result<Cow<'a, str>, failure::Error>
+    {
+        self.di.request(dir)
+    }
 }
 
 #[inline]
