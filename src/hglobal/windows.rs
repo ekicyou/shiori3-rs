@@ -77,7 +77,8 @@ pub fn string_to_multibyte(
         &wstr,
         default_char,
         default_char.is_none(),
-    ).and_then(|(data, invalid)| {
+    )
+    .and_then(|(data, invalid)| {
         if invalid {
             Err(Error::new(
                 ErrorKind::InvalidInput,
@@ -223,7 +224,8 @@ fn multi_byte_to_wide_char_utf8() {
             CP_UTF8,
             MB_ERR_INVALID_CHARS,
             b"\xD0\xA2\xD0\xB5\xD1\x81\xD1\x82"
-        ).unwrap(),
+        )
+        .unwrap(),
         "Тест"
     );
 }
@@ -250,7 +252,8 @@ fn wide_char_to_multi_byte_ascii() {
             &[0x0054, 0x0065, 0x0073, 0x0074],
             None,
             true
-        ).unwrap(),
+        )
+        .unwrap(),
         (b"Test".to_vec(), false)
     );
 }
@@ -272,7 +275,8 @@ fn wide_char_to_multi_byte_replace() {
             &[0x0054, 0x0065, 0x0073, 0x0074, 0xFFFF, 0x0029],
             Some(b':'),
             true
-        ).unwrap(),
+        )
+        .unwrap(),
         (b"Test:)".to_vec(), true)
     );
 }
