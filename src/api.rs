@@ -19,6 +19,7 @@ pub trait Shiori3 {
     fn request<'a, S: Into<&'a str>>(&mut self, req: S) -> Result<Cow<'a, str>, failure::Error>;
 }
 
+#[allow(dead_code)]
 struct Shiori3DI<T>
 where
     T: Shiori3,
@@ -27,6 +28,7 @@ where
 }
 
 impl<T: Shiori3> Shiori3DI<T> {
+    #[allow(dead_code)]
     fn new(target: T) -> Shiori3DI<T> {
         Shiori3DI { di: target }
     }

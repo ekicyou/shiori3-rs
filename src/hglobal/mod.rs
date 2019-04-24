@@ -94,16 +94,19 @@ impl GStr {
     }
 
     /// HGLOBALハンドルを取得します。
+    #[allow(dead_code)]
     pub fn handle(&self) -> HGLOBAL {
         self.h
     }
 
     /// 領域サイズを取得します。
+    #[allow(dead_code)]
     pub fn len(&self) -> usize {
         self.len
     }
 
     /// (HGLOBAL,len)を取得します。
+    #[allow(dead_code)]
     pub fn value(&self) -> (HGLOBAL, usize) {
         (self.h, self.len)
     }
