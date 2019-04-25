@@ -20,4 +20,4 @@ pest_derive = "2.0"
 winapi = {version = "0.3", features = [ "winbase", "stringapiset", ] }
 
 [dev-dependencies]
-env_logger = "0.5"
+env_logger = "0.6"
