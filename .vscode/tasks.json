@@ -12,6 +12,10 @@
         "group": {
             "kind": "test",
             "isDefault": true
+        },
+        "presentation": {
+            "panel": "dedicated",
+            "clear": true
         }
     }]
 }
