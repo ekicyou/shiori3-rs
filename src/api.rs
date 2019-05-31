@@ -2,8 +2,9 @@ use crate::hglobal::GStr;
 use crate::winapi::shared::minwindef::{DWORD, HGLOBAL, LPVOID};
 use failure;
 use std::borrow::Cow;
-use std::path::Path;
+use std::default::Default;
 use std::ptr;
+
 
 pub trait Shiori3 {
     /// hinstを設定します。
@@ -31,6 +32,13 @@ impl<T: Shiori3> Shiori3DI<T> {
     #[allow(dead_code)]
     fn new(target: T) -> Shiori3DI<T> {
         Shiori3DI { di: target }
+    }
+}
+
+impl<T: Shiori3 + Default> Default for Shiori3DI<T> {
+    #[allow(dead_code)]
+    fn default() -> Shiori3DI<T> {
+        Shiori3DI::new(T::default())
     }
 }
 
