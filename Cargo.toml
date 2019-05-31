@@ -13,8 +13,8 @@ readme = "README.md"
 log = "0.4"
 failure = "0.1"
 failure_derive = "0.1"
-pest = "2.0"
-pest_derive = "2.0"
+pest = "2.1"
+pest_derive = "2.1"
 
 [target."cfg(windows)".dependencies]
 winapi = {version = "0.3", features = [ "winbase", "stringapiset", ] }
