@@ -1,5 +1,5 @@
 use crate::hglobal::GStr;
-use crate::winapi::shared::minwindef::HGLOBAL;
+use crate::winapi::shared::minwindef::{DWORD, HGLOBAL, LPVOID};
 use failure;
 use std::borrow::Cow;
 use std::path::Path;
@@ -58,6 +58,14 @@ impl<T: Shiori3> Shiori3 for Shiori3DI<T> {
 
 /// SHIORI DLL API
 pub trait RawShiori3 {
+    /// SHIORI dllmain
+    fn raw_dllmain(
+        &mut self,
+        h_inst: usize,
+        ul_reason_for_call: DWORD,
+        lp_reserved: LPVOID,
+    ) -> bool;
+
     /// SHIORI Unload
     fn raw_unload(&mut self) -> bool;
 
@@ -76,7 +84,36 @@ trait RawShiori3Impl {
     ) -> Result<(HGLOBAL, usize), failure::Error>;
 }
 
+#[allow(dead_code)]
+const DLL_PROCESS_DETACH: DWORD = 0;
+#[allow(dead_code)]
+const DLL_PROCESS_ATTACH: DWORD = 1;
+#[allow(dead_code)]
+const DLL_THREAD_ATTACH: DWORD = 2;
+#[allow(dead_code)]
+const DLL_THREAD_DETACH: DWORD = 3;
+
 impl<T: Shiori3> RawShiori3 for T {
+    /// shiori.dll:dllmain
+    fn raw_dllmain(
+        &mut self,
+        h_inst: usize,
+        ul_reason_for_call: DWORD,
+        _lp_reserved: LPVOID,
+    ) -> bool {
+        match ul_reason_for_call {
+            DLL_PROCESS_ATTACH => match self.set_hinst(h_inst) {
+                Err(e) => {
+                    error!("{}", e);
+                    false
+                }
+                _ => true,
+            },
+            DLL_PROCESS_DETACH => self.raw_unload(),
+            _ => true,
+        }
+    }
+
     /// shiori.dll:unload
     fn raw_unload(&mut self) -> bool {
         match self.unload() {
