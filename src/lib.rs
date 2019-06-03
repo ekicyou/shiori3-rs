@@ -1,4 +1,4 @@
-pub mod api;
+mod api;
 mod error;
 mod hglobal;
 mod parsers;
