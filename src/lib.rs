@@ -3,7 +3,6 @@ mod error;
 mod hglobal;
 mod parsers;
 
-
 pub use crate::api::RawShiori3;
 pub use crate::api::Shiori3;
 pub use crate::error::MyError as ShioriError;

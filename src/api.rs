@@ -8,10 +8,9 @@ use std::path::Path;
 use std::ptr;
 use winapi::shared::minwindef::{DWORD, HGLOBAL, LPVOID};
 
-
 pub trait Shiori3: Sized {
     /// load_dir pathのファイルでSHIORIインスタンスを作成します。
-    fn load<P: AsRef<Path>>(h_inst: usize, load_dir: P) -> Result<Self, failure::Error>;
+    fn load<P: AsRef<Path>>(h_inst: usize, ansi_load_dir: P) -> Result<Self, failure::Error>;
 
     /// SHIORIリクエストを解釈し、応答を返します。
     fn request<'a, S: Into<&'a str>>(&mut self, req: S) -> Result<Cow<'a, str>, failure::Error>;
@@ -27,8 +26,8 @@ where
 
 impl<T: Shiori3> Shiori3 for Shiori3DI<T> {
     /// load_dir pathのファイルでSHIORIインスタンスを作成します。
-    fn load<P: AsRef<Path>>(h_inst: usize, load_dir: P) -> Result<Self, failure::Error> {
-        let di = T::load(h_inst, load_dir)?;
+    fn load<P: AsRef<Path>>(h_inst: usize, ansi_load_dir: P) -> Result<Self, failure::Error> {
+        let di = T::load(h_inst, ansi_load_dir)?;
         Ok(Shiori3DI { di: di })
     }
 
@@ -99,8 +98,8 @@ impl<T: Shiori3> RawShiori3<T> {
     }
     fn raw_load_impl(&mut self, hdir: HGLOBAL, len: usize) -> Result<(), failure::Error> {
         let gdir = GStr::capture(hdir, len);
-        let load_dir = gdir.to_ansi_str()?;
-        let shiori = Shiori3DI::<T>::load(self.h_inst, load_dir)?;
+        let ansi_load_dir = gdir.to_ansi_str()?;
+        let shiori = Shiori3DI::<T>::load(self.h_inst, ansi_load_dir)?;
         self.shiori = Some(shiori);
         Ok(())
     }
