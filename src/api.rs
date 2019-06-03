@@ -3,10 +3,11 @@ use crate::hglobal::GStr;
 
 use failure;
 use log::*;
+use std::borrow::Cow;
 use std::path::Path;
 use std::ptr;
 use winapi::shared::minwindef::{DWORD, HGLOBAL, LPVOID};
-use std::borrow::Cow;
+
 
 pub trait Shiori3: Sized {
     /// load_dir pathのファイルでSHIORIインスタンスを作成します。
@@ -40,6 +41,7 @@ impl<T: Shiori3> Shiori3 for Shiori3DI<T> {
 /// SHIORI DLL API
 
 #[allow(dead_code)]
+#[derive(Default)]
 pub struct RawShiori3<T>
 where
     T: Shiori3,
