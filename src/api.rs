@@ -23,13 +23,6 @@ where
     di: T,
 }
 
-impl<T: Shiori3> Shiori3DI<T> {
-    #[allow(dead_code)]
-    fn new(target: T) -> Shiori3DI<T> {
-        Shiori3DI { di: target }
-    }
-}
-
 impl<T: Shiori3> Shiori3 for Shiori3DI<T> {
     /// load_dir pathのファイルでSHIORIインスタンスを作成します。
     fn load<P: AsRef<Path>>(h_inst: usize, load_dir: P) -> Result<Self, failure::Error> {
@@ -92,6 +85,7 @@ impl<T: Shiori3> RawShiori3<T> {
     /// shiori.dll:load
     #[allow(dead_code)]
     pub fn raw_load(&mut self, hdir: HGLOBAL, len: usize) -> bool {
+        self.raw_unload();
         match self.raw_load_impl(hdir, len) {
             Err(e) => {
                 error!("{}", e);
