@@ -2,10 +2,11 @@ use crate::error::MyErrorKind;
 use crate::hglobal::GStr;
 
 use failure;
-use std::borrow::Cow;
+use log::*;
 use std::path::Path;
 use std::ptr;
 use winapi::shared::minwindef::{DWORD, HGLOBAL, LPVOID};
+use std::borrow::Cow;
 
 pub trait Shiori3: Sized {
     /// load_dir pathのファイルでSHIORIインスタンスを作成します。

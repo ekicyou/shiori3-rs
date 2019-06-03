@@ -1,9 +1,3 @@
-#[macro_use]
-extern crate log;
-extern crate pest;
-extern crate pest_derive;
-extern crate winapi;
-
 mod api;
 mod error;
 mod hglobal;
