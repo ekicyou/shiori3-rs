@@ -86,7 +86,7 @@ impl GStr {
     }
 
     /// 要素を&[u8]として参照します。
-    pub fn to_bytes(&self) -> &[u8] {
+    pub fn as_bytes(&self) -> &[u8] {
         unsafe {
             let p = transmute::<HGLOBAL, *mut u8>(self.h);
             from_raw_parts::<u8>(p, self.len)
@@ -115,7 +115,7 @@ impl GStr {
     /// MultiByteToWideChar()を利用する。
     /// SHIORI::load()文字列の取り出しに利用する。
     pub fn to_ansi_str(&self) -> MyResult<OsString> {
-        let bytes = self.to_bytes();
+        let bytes = self.as_bytes();
         let s = Encoding::ANSI
             .to_string(bytes)
             .map_err(|_| MyErrorKind::EncodeAnsi)?;
@@ -126,7 +126,7 @@ impl GStr {
     /// 格納データを「UTF-8」とみなして、strに変換する。
     /// SHIORI::request()文字列の取り出しに利用する。
     pub fn to_utf8_str(&self) -> MyResult<&str> {
-        let bytes = self.to_bytes();
+        let bytes = self.as_bytes();
         Ok(str::from_utf8(bytes)?)
     }
 }

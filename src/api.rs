@@ -26,7 +26,7 @@ where
 
 impl<T: Shiori3> Shiori3 for Shiori3DI<T> {
     /// load_dir pathのファイルでSHIORIインスタンスを作成します。
-    fn load<P: AsRef<Path>>(h_inst: usize, ansi_load_dir: P) -> Result<Self, failure::Error> {
+    fn load<P: AsRef<Path>>(h_inst: usize, ansi_load_dir: P,load_str_bytes:&[u8]) -> Result<Self, failure::Error> {
         let di = T::load(h_inst, ansi_load_dir)?;
         Ok(Shiori3DI { di: di })
     }
