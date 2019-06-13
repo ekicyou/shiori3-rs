@@ -1,9 +1,11 @@
-use super::req_parser::{Rule, ShioriRequestParser};
 use crate::error::*;
 use pest;
 use pest::iterators::FlatPairs;
-use pest::Parser;
+use pest::Parser as PestParser;
 use std::collections::HashMap;
+
+pub use super::req_parser::Rule;
+pub use super::req_parser::ShioriRequestParser as Parser;
 
 pub type ParseError = pest::error::Error<Rule>;
 
@@ -28,7 +30,7 @@ impl<'a> ShioriRequest<'a> {
     #[allow(dead_code)]
     pub fn parse(text: &'a str) -> MyResult<ShioriRequest<'a>> {
         let rc = ShioriRequest::new(text);
-        let it = ShioriRequestParser::parse(Rule::req, text)?.flatten();
+        let it = Parser::parse(Rule::req, text)?.flatten();
         Ok(rc.parse1(it)?)
     }
 
