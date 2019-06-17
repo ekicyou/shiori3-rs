@@ -1,11 +1,11 @@
 use crate::error::*;
 use pest;
 use pest::iterators::FlatPairs;
+use pest::Parser as PestParser;
 use std::collections::HashMap;
 
 pub use super::req_parser::Rule;
 pub use super::req_parser::ShioriRequestParser as Parser;
-pub use pest::Parser as PestParser;
 
 pub type ParseError = pest::error::Error<Rule>;
 
