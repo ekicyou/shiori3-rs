@@ -6,7 +6,6 @@ use self::enc::{Encoder, Encoding};
 use crate::error::*;
 use std::ffi::OsString;
 use std::str;
-use winapi::_core::mem::transmute;
 use winapi::_core::slice::{from_raw_parts, from_raw_parts_mut};
 use winapi::shared::minwindef::{HGLOBAL, UINT};
 use winapi::um::winbase::{GlobalAlloc, GlobalFree};
@@ -49,7 +48,7 @@ impl GStr {
         let len = bytes.len();
         unsafe {
             let h = GlobalAlloc(GMEM_FIXED, len as size_t);
-            let p = transmute::<HGLOBAL, *mut u8>(h);
+            let p = h as *mut u8;
             let dst = from_raw_parts_mut::<u8>(p, len);
             dst[..].clone_from_slice(bytes);
             GStr { h, len, has_free }
@@ -84,7 +83,7 @@ impl GStr {
     /// 要素を&[u8]として参照します。
     pub fn as_bytes(&self) -> &[u8] {
         unsafe {
-            let p = transmute::<HGLOBAL, *mut u8>(self.h);
+            let p = self.h as *mut u8;
             from_raw_parts::<u8>(p, self.len)
         }
     }

@@ -1,5 +1,5 @@
 #[cfg(debug_assertions)]
-const _GRAMMAR: &'static str = include_str!("req_parser.pest");
+const _GRAMMAR: &str = include_str!("req_parser.pest");
 
 use pest_derive::*;
 

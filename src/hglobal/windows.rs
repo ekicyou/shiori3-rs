@@ -100,7 +100,7 @@ pub fn multi_byte_to_wide_char(
     multi_byte_str: &[u8],
 ) -> Result<String> {
     // Empty string
-    if multi_byte_str.len() == 0 {
+    if multi_byte_str.is_empty() {
         return Ok(String::new());
     }
     unsafe {

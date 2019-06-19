@@ -37,7 +37,7 @@ impl<'a> ShioriRequest<'a> {
     #[allow(dead_code)]
     fn new(text: &'a str) -> ShioriRequest<'a> {
         ShioriRequest {
-            text: text,
+            text,
             version: 0,
             method: Rule::req,
             id: None,
