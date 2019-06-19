@@ -1,64 +1,21 @@
 {
-    "version": "0.1.0",
-    "command": "cargo",
-    "isShellCommand": true,
-    "showOutput": "always",
+    // tasks.json 形式の詳細についての資料は、
+    // https://go.microsoft.com/fwlink/?LinkId=733558 をご覧ください
+    "version": "2.0.0",
     "tasks": [{
-        "taskName": "build",
-        "isBuildCommand": true,
-        "problemMatcher": {
-            "owner": "rust",
-            "fileLocation": [
-                "relative",
-                "${workspaceRoot}"
-            ],
-            "pattern": {
-                "regexp": "^(.+):(\\d+):(\\d+):\\s+(\\d+):(\\d+)\\s+(warning|error):\\s+(.*)$",
-                "file": 1,
-                "line": 2,
-                "column": 3,
-                "endLine": 4,
-                "endColumn": 5,
-                "severity": 6,
-                "message": 7
-            }
+        "label": "rust test",
+        "type": "cargo",
+        "subcommand": "test",
+        "problemMatcher": [
+            "$rustc"
+        ],
+        "group": {
+            "kind": "test",
+            "isDefault": true
+        },
+        "presentation": {
+            "panel": "dedicated",
+            "clear": true
         }
-    }, {
-        "taskName": "clean"
-    }, {
-        "taskName": "run"
-    }, {
-        "taskName": "test",
-        "isTestCommand": true,
-        "problemMatcher": [{
-            "owner": "rust",
-            "fileLocation": [
-                "relative",
-                "${workspaceRoot}"
-            ],
-            "pattern": {
-                "regexp": "^(.+):(\\d+):(\\d+):\\s+(\\d+):(\\d+)\\s+(warning|error):\\s+(.*)$",
-                "file": 1,
-                "line": 2,
-                "column": 3,
-                "endLine": 4,
-                "endColumn": 5,
-                "severity": 6,
-                "message": 7
-            }
-        }, {
-            "owner": "rust",
-            "fileLocation": [
-                "relative",
-                "${workspaceRoot}"
-            ],
-            "severity": "error",
-            "pattern": {
-                "regexp": "^.*panicked\\s+at\\s+'(.*)',\\s+(.*):(\\d+)$",
-                "message": 1,
-                "file": 2,
-                "line": 3
-            }
-        }]
     }]
 }

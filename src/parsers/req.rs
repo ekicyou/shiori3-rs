@@ -1,10 +1,11 @@
-use super::req_parser::{Rule, ShioriRequestParser};
 use crate::error::*;
-use failure::{Context, Fail};
 use pest;
 use pest::iterators::FlatPairs;
-use pest::Parser;
+use pest::Parser as PestParser;
 use std::collections::HashMap;
+
+pub use super::req_parser::Rule;
+pub use super::req_parser::ShioriRequestParser as Parser;
 
 pub type ParseError = pest::error::Error<Rule>;
 
@@ -27,16 +28,16 @@ pub struct ShioriRequest<'a> {
 
 impl<'a> ShioriRequest<'a> {
     #[allow(dead_code)]
-    pub fn parse(text: &'a str) -> ShioriResult<ShioriRequest<'a>> {
+    pub fn parse(text: &'a str) -> MyResult<ShioriRequest<'a>> {
         let rc = ShioriRequest::new(text);
-        let it = ShioriRequestParser::parse(Rule::req, text)?.flatten();
+        let it = Parser::parse(Rule::req, text)?.flatten();
         Ok(rc.parse1(it)?)
     }
 
     #[allow(dead_code)]
     fn new(text: &'a str) -> ShioriRequest<'a> {
         ShioriRequest {
-            text: text,
+            text,
             version: 0,
             method: Rule::req,
             id: None,
@@ -52,7 +53,7 @@ impl<'a> ShioriRequest<'a> {
     }
 
     #[allow(dead_code)]
-    fn parse1(mut self, mut it: FlatPairs<'a, Rule>) -> ShioriResult<ShioriRequest<'a>> {
+    fn parse1(mut self, mut it: FlatPairs<'a, Rule>) -> MyResult<ShioriRequest<'a>> {
         let pair = match it.next() {
             Some(a) => a,
             None => return Ok(self),
@@ -82,7 +83,7 @@ impl<'a> ShioriRequest<'a> {
     }
 
     #[allow(dead_code)]
-    fn parse_key_value(&mut self, it: &mut FlatPairs<'a, Rule>) -> ShioriResult<()> {
+    fn parse_key_value(&mut self, it: &mut FlatPairs<'a, Rule>) -> MyResult<()> {
         let pair = it.next().unwrap();
         let rule = pair.as_rule();
         let key = pair.as_str();

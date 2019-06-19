@@ -1,2 +1,2 @@
 pub mod req;
-mod req_parser;
+pub mod req_parser;
