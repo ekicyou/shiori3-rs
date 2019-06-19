@@ -36,7 +36,7 @@ impl<T: Shiori3> Shiori3 for Shiori3DI<T> {
         load_dir_bytes: &[u8],
     ) -> Result<Self, failure::Error> {
         let di = T::load(h_inst, load_dir, load_dir_bytes)?;
-        Ok(Shiori3DI { di: di })
+        Ok(Shiori3DI { di })
     }
 
     /// SHIORIリクエストを解釈し、応答を返します。

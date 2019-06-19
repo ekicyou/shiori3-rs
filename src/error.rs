@@ -61,7 +61,7 @@ impl From<Utf8Error> for MyError {
 impl MyError {
     #[allow(dead_code)]
     pub fn script_error(message: String) -> MyError {
-        let kind = MyErrorKind::Script { message: message };
+        let kind = MyErrorKind::Script { message };
         MyError::from(kind)
     }
 }

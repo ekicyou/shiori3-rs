@@ -38,8 +38,8 @@ impl GStr {
     /// shiori::load/requestのHGLOBAL受け入れに利用してください。
     pub fn capture(h: HGLOBAL, len: usize) -> GStr {
         GStr {
-            h: h,
-            len: len,
+            h,
+            len,
             has_free: true,
         }
     }
@@ -52,11 +52,7 @@ impl GStr {
             let p = transmute::<HGLOBAL, *mut u8>(h);
             let dst = from_raw_parts_mut::<u8>(p, len);
             dst[..].clone_from_slice(bytes);
-            GStr {
-                h: h,
-                len: len,
-                has_free: has_free,
-            }
+            GStr { h, len, has_free }
         }
     }
 
