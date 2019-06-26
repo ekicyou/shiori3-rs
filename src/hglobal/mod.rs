@@ -1,5 +1,5 @@
 #![cfg(any(windows))]
-mod enc;
+pub mod enc;
 mod windows;
 
 use self::enc::{Encoder, Encoding};
