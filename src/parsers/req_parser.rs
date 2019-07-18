@@ -1,5 +1,7 @@
 #[cfg(debug_assertions)]
-const _GRAMMAR: &'static str = include_str!("req_parser.pest");
+const _GRAMMAR: &str = include_str!("req_parser.pest");
+
+use pest_derive::*;
 
 #[allow(dead_code)]
 #[derive(Parser)]
@@ -20,7 +22,7 @@ mod tests {
         {
             let pair = &items[0];
             assert_eq!(pair.as_rule(), Rule::id);
-            let span = pair.clone().into_span();
+            let span = pair.clone().as_span();
             assert_eq!(span.as_str(), "a1");
             assert_eq!(span.start(), 0);
             assert_eq!(span.end(), 2);
@@ -36,7 +38,7 @@ mod tests {
         {
             let pair = &items[0];
             assert_eq!(pair.as_rule(), Rule::id);
-            let span = pair.clone().into_span();
+            let span = pair.clone().as_span();
             assert_eq!(span.as_str(), "感じの良いID");
             assert_eq!(span.start(), 0);
             assert_eq!(span.end(), 17);
@@ -91,7 +93,7 @@ mod tests {
         {
             let pair = &items[0];
             assert_eq!(pair.as_rule(), Rule::method);
-            let span = pair.clone().into_span();
+            let span = pair.clone().as_span();
             assert_eq!(span.as_str(), "GET");
             assert_eq!(span.start(), 0);
             assert_eq!(span.end(), 3);
@@ -111,7 +113,7 @@ mod tests {
         {
             let pair = &items[0];
             assert_eq!(pair.as_rule(), Rule::method);
-            let span = pair.clone().into_span();
+            let span = pair.clone().as_span();
             assert_eq!(span.as_str(), "NOTIFY");
             assert_eq!(span.start(), 0);
             assert_eq!(span.end(), 6);
@@ -131,7 +133,7 @@ mod tests {
         {
             let pair = &items[0];
             assert_eq!(pair.as_rule(), Rule::header);
-            let span = pair.clone().into_span();
+            let span = pair.clone().as_span();
             assert_eq!(span.as_str(), "GET OPEN SHIORI/2.6\r\n");
             assert_eq!(span.start(), 0);
             assert_eq!(span.end(), 21);
@@ -169,7 +171,7 @@ mod tests {
         {
             let pair = &items[0];
             assert_eq!(pair.as_rule(), Rule::header);
-            let span = pair.clone().into_span();
+            let span = pair.clone().as_span();
             assert_eq!(span.as_str(), "NOTIFY SHIORI/3.0\r\n");
             assert_eq!(span.start(), 0);
             assert_eq!(span.end(), 19);
@@ -197,7 +199,7 @@ mod tests {
         {
             let pair = &items[0];
             assert_eq!(pair.as_rule(), Rule::key_other);
-            let span = pair.clone().into_span();
+            let span = pair.clone().as_span();
             assert_eq!(span.as_str(), "感じの良いID");
             assert_eq!(span.start(), 0);
             assert_eq!(span.end(), 17);
@@ -213,7 +215,7 @@ mod tests {
         {
             let pair = &items[0];
             assert_eq!(pair.as_rule(), Rule::key_other);
-            let span = pair.clone().into_span();
+            let span = pair.clone().as_span();
             assert_eq!(span.as_str(), "IDの感じ");
             assert_eq!(span.start(), 0);
             assert_eq!(span.end(), 11);
@@ -259,7 +261,7 @@ mod tests {
 
         let pair = &items[0];
         assert_eq!(pair.as_rule(), Rule::key_value);
-        let span = pair.clone().into_span();
+        let span = pair.clone().as_span();
         assert_eq!(span.as_str(), "IDは: XYZですよ\r\n");
         assert_eq!(span.start(), 0);
         assert_eq!(span.end(), 21);
@@ -290,7 +292,7 @@ mod tests {
 
         let pair = &items[0];
         assert_eq!(pair.as_rule(), Rule::req);
-        let span = pair.clone().into_span();
+        let span = pair.clone().as_span();
         assert_eq!(span.as_str(), grammar);
         assert_eq!(span.start(), 0);
         assert_eq!(span.end(), 82);
@@ -338,7 +340,7 @@ mod tests {
 
         let pair = items.next().unwrap();
         assert_eq!(pair.as_rule(), Rule::req);
-        let span = pair.clone().into_span();
+        let span = pair.clone().as_span();
         assert_eq!(span.as_str(), grammar);
         assert_eq!(span.start(), 0);
         assert_eq!(span.end(), 133);
@@ -399,7 +401,7 @@ mod tests {
 
         let pair = items.next().unwrap();
         assert_eq!(pair.as_rule(), Rule::req);
-        let span = pair.clone().into_span();
+        let span = pair.clone().as_span();
         assert_eq!(span.as_str(), grammar);
 
         assert_eq!(items.next().unwrap().as_rule(), Rule::header);

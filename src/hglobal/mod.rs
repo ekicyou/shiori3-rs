@@ -1,13 +1,11 @@
 #![cfg(any(windows))]
-mod enc;
+pub mod enc;
 mod windows;
 
 use self::enc::{Encoder, Encoding};
-use error::*;
+use crate::error::*;
 use std::ffi::OsString;
 use std::str;
-use std::str::Utf8Error;
-use winapi::_core::mem::transmute;
 use winapi::_core::slice::{from_raw_parts, from_raw_parts_mut};
 use winapi::shared::minwindef::{HGLOBAL, UINT};
 use winapi::um::winbase::{GlobalAlloc, GlobalFree};
@@ -39,8 +37,8 @@ impl GStr {
     /// shiori::load/requestのHGLOBAL受け入れに利用してください。
     pub fn capture(h: HGLOBAL, len: usize) -> GStr {
         GStr {
-            h: h,
-            len: len,
+            h,
+            len,
             has_free: true,
         }
     }
@@ -50,14 +48,10 @@ impl GStr {
         let len = bytes.len();
         unsafe {
             let h = GlobalAlloc(GMEM_FIXED, len as size_t);
-            let p = transmute::<HGLOBAL, *mut u8>(h);
+            let p = h as *mut u8;
             let dst = from_raw_parts_mut::<u8>(p, len);
             dst[..].clone_from_slice(bytes);
-            GStr {
-                h: h,
-                len: len,
-                has_free: has_free,
-            }
+            GStr { h, len, has_free }
         }
     }
 
@@ -87,39 +81,47 @@ impl GStr {
     }
 
     /// 要素を&[u8]として参照します。
-    pub fn to_bytes(&self) -> &[u8] {
+    pub fn as_bytes(&self) -> &[u8] {
         unsafe {
-            let p = transmute::<HGLOBAL, *mut u8>(self.h);
+            let p = self.h as *mut u8;
             from_raw_parts::<u8>(p, self.len)
         }
     }
 
     /// HGLOBALハンドルを取得します。
+    #[allow(dead_code)]
     pub fn handle(&self) -> HGLOBAL {
         self.h
     }
 
     /// 領域サイズを取得します。
+    #[allow(dead_code)]
     pub fn len(&self) -> usize {
         self.len
+    }
+
+    /// (HGLOBAL,len)を取得します。
+    #[allow(dead_code)]
+    pub fn value(&self) -> (HGLOBAL, usize) {
+        (self.h, self.len)
     }
 
     /// 格納データを「ANSI STRING(JP環境ではSJIS)」とみなして、OsStrに変換します。
     /// MultiByteToWideChar()を利用する。
     /// SHIORI::load()文字列の取り出しに利用する。
-    pub fn to_ansi_str(&self) -> ShioriResult<OsString> {
-        let bytes = self.to_bytes();
+    pub fn to_ansi_str(&self) -> MyResult<OsString> {
+        let bytes = self.as_bytes();
         let s = Encoding::ANSI
             .to_string(bytes)
-            .map_err(|_| ErrorKind::EncodeAnsi)?;
+            .map_err(|_| MyErrorKind::EncodeAnsi)?;
         let os_str = OsString::from(s);
         Ok(os_str)
     }
 
     /// 格納データを「UTF-8」とみなして、strに変換する。
     /// SHIORI::request()文字列の取り出しに利用する。
-    pub fn to_utf8_str(&self) -> ShioriResult<&str> {
-        let bytes = self.to_bytes();
+    pub fn to_utf8_str(&self) -> MyResult<&str> {
+        let bytes = self.as_bytes();
         Ok(str::from_utf8(bytes)?)
     }
 }

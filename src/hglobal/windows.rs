@@ -17,28 +17,28 @@ use winapi::um::stringapiset::{MultiByteToWideChar, WideCharToMultiByte};
 
 /// Always use precomposed characters, that is, characters having a single character value for
 /// a base or nonspacing character combination.
-pub const MB_PRECOMPOSED: DWORD = 0x00000001;
+pub const MB_PRECOMPOSED: DWORD = 0x0000_0001;
 /// Always use decomposed characters, that is, characters in which a base character and one or more
 /// nonspacing characters each have distinct code point values.
-pub const MB_COMPOSITE: DWORD = 0x00000002;
+pub const MB_COMPOSITE: DWORD = 0x0000_0002;
 /// Use glyph characters instead of control characters.
-pub const MB_USEGLYPHCHARS: DWORD = 0x00000004;
+pub const MB_USEGLYPHCHARS: DWORD = 0x0000_0004;
 /// Fail if an invalid input character is encountered.
-pub const MB_ERR_INVALID_CHARS: DWORD = 0x00000008;
+pub const MB_ERR_INVALID_CHARS: DWORD = 0x0000_0008;
 /// Convert composite characters, consisting of a base character and a nonspacing character,
 /// each with different character values.
-pub const WC_COMPOSITECHECK: DWORD = 0x00000200;
+pub const WC_COMPOSITECHECK: DWORD = 0x0000_0200;
 /// Discard nonspacing characters during conversion.
-pub const WC_DISCARDNS: DWORD = 0x00000010;
+pub const WC_DISCARDNS: DWORD = 0x0000_0010;
 /// Default. Generate separate characters during conversion.
-pub const WC_SEPCHARS: DWORD = 0x00000020;
+pub const WC_SEPCHARS: DWORD = 0x0000_0020;
 /// Replace exceptions with the default character during conversion.
-pub const WC_DEFAULTCHAR: DWORD = 0x00000040;
+pub const WC_DEFAULTCHAR: DWORD = 0x0000_0040;
 /// Fail if an invalid input character is encountered.
-pub const WC_ERR_INVALID_CHARS: DWORD = 0x00000080;
+pub const WC_ERR_INVALID_CHARS: DWORD = 0x0000_0080;
 /// Translate any Unicode characters that do not translate directly to multibyte equivalents to
 /// the default character specified by lpDefaultChar.
-pub const WC_NO_BEST_FIT_CHARS: DWORD = 0x00000400;
+pub const WC_NO_BEST_FIT_CHARS: DWORD = 0x0000_0400;
 
 /// Encoding for use WinAPI calls: MultiByteToWideChar and WideCharToMultiByte.
 pub struct EncoderCodePage(pub u32);
@@ -77,7 +77,8 @@ pub fn string_to_multibyte(
         &wstr,
         default_char,
         default_char.is_none(),
-    ).and_then(|(data, invalid)| {
+    )
+    .and_then(|(data, invalid)| {
         if invalid {
             Err(Error::new(
                 ErrorKind::InvalidInput,
@@ -99,7 +100,7 @@ pub fn multi_byte_to_wide_char(
     multi_byte_str: &[u8],
 ) -> Result<String> {
     // Empty string
-    if multi_byte_str.len() == 0 {
+    if multi_byte_str.is_empty() {
         return Ok(String::new());
     }
     unsafe {
@@ -145,7 +146,7 @@ pub fn wide_char_to_multi_byte(
     use_default_char_flag: bool,
 ) -> Result<(Vec<u8>, bool)> {
     // Empty string
-    if wide_char_str.len() == 0 {
+    if wide_char_str.is_empty() {
         return Ok((Vec::new(), false));
     }
     unsafe {
@@ -181,9 +182,10 @@ pub fn wide_char_to_multi_byte(
                     Some(_) => default_char_ref.as_ptr(),
                     None => null(),
                 },
-                match use_default_char_flag {
-                    true => use_char_ref.as_mut_ptr(),
-                    false => null_mut(),
+                if use_default_char_flag {
+                    use_char_ref.as_mut_ptr()
+                } else {
+                    null_mut()
                 },
             );
             if (len as usize) == astr.len() {
@@ -223,7 +225,8 @@ fn multi_byte_to_wide_char_utf8() {
             CP_UTF8,
             MB_ERR_INVALID_CHARS,
             b"\xD0\xA2\xD0\xB5\xD1\x81\xD1\x82"
-        ).unwrap(),
+        )
+        .unwrap(),
         "Тест"
     );
 }
@@ -250,7 +253,8 @@ fn wide_char_to_multi_byte_ascii() {
             &[0x0054, 0x0065, 0x0073, 0x0074],
             None,
             true
-        ).unwrap(),
+        )
+        .unwrap(),
         (b"Test".to_vec(), false)
     );
 }
@@ -272,7 +276,8 @@ fn wide_char_to_multi_byte_replace() {
             &[0x0054, 0x0065, 0x0073, 0x0074, 0xFFFF, 0x0029],
             Some(b':'),
             true
-        ).unwrap(),
+        )
+        .unwrap(),
         (b"Test:)".to_vec(), true)
     );
 }
