@@ -98,7 +98,7 @@ impl<T: Shiori3> RawShiori3<T> {
         self.raw_unload();
         match self.raw_load_impl(hdir, len) {
             Err(e) => {
-                error!("{}", e);
+                error!("[load] {}", e);
                 false
             }
             _ => true,
@@ -118,7 +118,7 @@ impl<T: Shiori3> RawShiori3<T> {
     pub fn raw_request(&mut self, hreq: HGLOBAL, len: &mut usize) -> HGLOBAL {
         match self.raw_request_impl(hreq, *len) {
             Err(e) => {
-                error!("{}", e);
+                error!("[request] {}", e);
                 *len = 0;
                 ptr::null_mut()
             }
