@@ -1,4 +1,4 @@
-use crate::hglobal::GStr;
+use crate::gstr::GStr;
 use futures::channel::oneshot::{Receiver, Sender};
 use std::future::Future;
 use std::pin::Pin;

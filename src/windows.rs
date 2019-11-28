@@ -1,6 +1,6 @@
 //! 8-bit string converters for Windows systems.
 //! original: https://github.com/bozaro/local-encoding-rs/blob/master/src/windows.rs
-
+#![cfg(any(windows))]
 #![allow(dead_code)]
 
 use super::enc::Encoder;

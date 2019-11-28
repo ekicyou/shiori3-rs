@@ -1,8 +1,6 @@
 #![cfg(any(windows))]
-pub mod enc;
-mod windows;
 
-use self::enc::{Encoder, Encoding};
+use crate::enc::{Encoder, Encoding};
 use crate::error::*;
 use std::ffi::OsString;
 use std::str;

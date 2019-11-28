@@ -1,5 +1,5 @@
 use crate::error::MyErrorKind;
-use crate::hglobal::GStr;
+use crate::gstr::GStr;
 
 use failure;
 use log::*;
