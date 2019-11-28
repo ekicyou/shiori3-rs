@@ -14,11 +14,13 @@ use winapi::vc::vcruntime::size_t;
 const GMEM_FIXED: UINT = 0;
 
 /// HGLOBALを文字列にキャプチャーします。
+#[derive(Debug)]
 pub struct GStr {
     h: HGLOBAL,
     len: usize,
     has_free: bool,
 }
+unsafe impl Send for GStr {}
 
 impl Drop for GStr {
     fn drop(&mut self) {
