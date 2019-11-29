@@ -1,6 +1,8 @@
 use crate::gstr::GStr;
-use futures::channel::oneshot::{Receiver, Sender};
-use std::future::Future;
+use finally_block::finally;
+use futures::channel::mpsc;
+use futures::channel::oneshot;
+use futures::stream::StreamExt;
 use std::pin::Pin;
 use std::ptr;
 use std::sync::{Mutex, MutexGuard, PoisonError};
@@ -10,6 +12,10 @@ use winapi::shared::minwindef::{DWORD, HGLOBAL, LPVOID};
 pub enum Error {
     Unimplemented,
     PoisonError,
+    EventTrySendError,
+    EventNotInitialized,
+    EventCanceled,
+    Shutdowned,
 }
 
 impl<T> From<PoisonError<T>> for Error {
@@ -17,22 +23,31 @@ impl<T> From<PoisonError<T>> for Error {
         Error::PoisonError
     }
 }
+impl From<mpsc::TrySendError<Event>> for Error {
+    fn from(_: mpsc::TrySendError<Event>) -> Error {
+        Error::EventTrySendError
+    }
+}
+impl From<oneshot::Canceled> for Error {
+    fn from(_: oneshot::Canceled) -> Error {
+        Error::EventCanceled
+    }
+}
 
 pub type Result<T> = std::result::Result<T, Error>;
 
 pub struct Load {
-    pub h_inst: usize,
+    pub hinst: usize,
     pub load_dir: GStr,
-    pub res: Sender<Result<()>>,
 }
 
 pub struct Unload {
-    pub res: Sender<Result<()>>,
+    pub res: oneshot::Sender<Result<()>>,
 }
 
 pub struct Request {
     pub req: GStr,
-    pub res: Sender<Result<GStr>>,
+    pub res: oneshot::Sender<Result<GStr>>,
 }
 
 /// raw SHIORI3 Event
@@ -47,7 +62,31 @@ pub enum Event {
     Request(Request),
 }
 
-pub struct RawEntry {}
+pub struct RawEntry {
+    event_sender: mpsc::Sender<Event>,
+}
+
+fn init_work(event_sender: mpsc::Sender<Event>) -> RawEntry {
+    RawEntry {
+        event_sender: event_sender,
+    }
+}
+
+static mut H_INST: usize = 0;
+lazy_static! {
+    static ref WORK: Mutex<Option<RawEntry>> = Mutex::new(None);
+}
+/// ワークへのロックを取得します。
+fn work_mutex<'a>() -> Result<MutexGuard<'a, Option<RawEntry>>> {
+    Ok(WORK.lock()?)
+}
+
+/// ワークを破棄します。
+fn drop_work() -> Result<()> {
+    let mut lock_work = work_mutex()?;
+    *lock_work = None;
+    Ok(())
+}
 
 #[allow(dead_code)]
 const DLL_PROCESS_DETACH: DWORD = 0;
@@ -58,21 +97,8 @@ const DLL_THREAD_ATTACH: DWORD = 2;
 #[allow(dead_code)]
 const DLL_THREAD_DETACH: DWORD = 3;
 
-static mut H_INST: usize = 0;
-lazy_static! {
-    static ref WORK: Mutex<RawEntry> = Mutex::new(init_work());
-}
-fn init_work() -> RawEntry {
-    RawEntry {}
-}
-fn work<'a>() -> std::result::Result<
-    std::sync::MutexGuard<'a, RawEntry>,
-    std::sync::PoisonError<std::sync::MutexGuard<'a, RawEntry>>,
-> {
-    WORK.lock()
-}
-
 impl RawEntry {
+    /// dllmain処理。hinstを保存するのみ。
     #[allow(dead_code)]
     pub fn dllmain(hinst: usize, ul_reason_for_call: DWORD, _lp_reserved: LPVOID) -> bool {
         match ul_reason_for_call {
@@ -82,21 +108,21 @@ impl RawEntry {
                 }
                 true
             }
-            DLL_PROCESS_DETACH => Self::unload(),
+            DLL_PROCESS_DETACH => Self::unload_sync(),
             _ => true,
         }
     }
 
+    /// load処理。新たにapiを返す。
     #[allow(dead_code)]
-    pub fn load(hdir: HGLOBAL, len: usize) -> Result<RawAPI> {
-        Self::unload();
-        let mut work = work()?;
-        unimplemented!();
+    pub async fn load(hdir: HGLOBAL, len: usize) -> Result<RawAPI> {
+        Self::load_impl(hdir, len).await
     }
 
+    /// unload処理。終了を待機して結果を返す。
     #[allow(dead_code)]
-    pub fn unload() -> bool {
-        match RawEntry::unload_impl() {
+    pub async fn unload() -> bool {
+        match RawEntry::unload_impl().await {
             Err(e) => {
                 error!("{:?}", e);
                 false
@@ -104,14 +130,17 @@ impl RawEntry {
             _ => true,
         }
     }
-    fn unload_impl() -> Result<()> {
-        let mut work = work()?;
-        unimplemented!();
+
+    /// DLL_PROCESS_DETACH 処理：何もしない。
+    /// unloadは非同期実装なのでこのタイミングでは呼び出せない。
+    pub fn unload_sync() -> bool {
+        true
     }
 
+    /// request処理。apiにRequestイベントを発行し、結果を待機して返す。
     #[allow(dead_code)]
-    pub fn request(hreq: HGLOBAL, len: &mut usize) -> HGLOBAL {
-        match RawEntry::request_impl(hreq, len) {
+    pub async fn request(hreq: HGLOBAL, len: &mut usize) -> HGLOBAL {
+        match RawEntry::request_impl(hreq, len).await {
             Err(e) => {
                 error!("{:?}", e);
                 *len = 0;
@@ -123,27 +152,78 @@ impl RawEntry {
             }
         }
     }
-    fn request_impl(hreq: HGLOBAL, len: &mut usize) -> Result<GStr> {
-        let mut work = work()?;
-        unimplemented!();
+
+    async fn load_impl(hdir: HGLOBAL, len: usize) -> Result<RawAPI> {
+        Self::unload().await;
+        // create api
+        let (tx, rx) = mpsc::channel::<Event>(16);
+        let mut lock_work = work_mutex()?;
+        *lock_work = Some(init_work(tx));
+        let api = RawAPI::new(rx)?;
+
+        // send event
+        let hinst = unsafe { H_INST };
+        let gdir = GStr::capture(hdir, len);
+        let work = lock_work.as_mut().ok_or(Error::Unimplemented)?;
+        work.send_event(Event::Load(Load {
+            hinst: hinst,
+            load_dir: gdir,
+        }))?;
+
+        Ok(api)
+    }
+
+    async fn unload_impl() -> Result<()> {
+        let _f = finally(|| {
+            let _ = drop_work();
+        });
+
+        // send event
+        let rx = {
+            let mut lock_work = work_mutex()?;
+            let work = lock_work.as_mut().ok_or(Error::Unimplemented)?;
+            let (tx, rx) = oneshot::channel::<Result<()>>();
+            work.send_event(Event::Unload(Unload { res: tx }))?;
+            rx
+        };
+
+        // wait result
+        rx.await?
+    }
+
+    async fn request_impl(hreq: HGLOBAL, len: &mut usize) -> Result<GStr> {
+        // send event
+        let rx = {
+            let mut lock_work = work_mutex()?;
+            let work = lock_work.as_mut().ok_or(Error::Unimplemented)?;
+            let greq = GStr::capture(hreq, *len);
+            let (tx, rx) = oneshot::channel::<Result<GStr>>();
+            work.send_event(Event::Request(Request { req: greq, res: tx }))?;
+            rx
+        };
+
+        // wait result
+        rx.await?
+    }
+
+    fn send_event(&mut self, event: Event) -> Result<()> {
+        self.event_sender.try_send(event)?;
+        Ok(())
     }
 }
 
-pub struct RawAPI {}
+pub struct RawAPI {
+    event_receiver: mpsc::Receiver<Event>,
+}
 
 impl RawAPI {
-    fn new(hinst: usize) -> Result<RawAPI> {
-        unimplemented!();
+    fn new(event_receiver: mpsc::Receiver<Event>) -> Result<RawAPI> {
+        Ok(RawAPI {
+            event_receiver: event_receiver,
+        })
     }
 
-    pub async fn run<F>(self: Pin<&mut Self>, feature: F)
-    where
-        F: Fn(Pin<&mut Self>) -> Future<Output = Result<()>>,
-    {
-        unimplemented!();
-    }
-
-    pub async fn event(self: Pin<&mut Self>) -> Result<Event> {
-        unimplemented!();
+    pub async fn event(mut self: Pin<&mut Self>) -> Result<Event> {
+        self.event_receiver.next().await.ok_or(Error::Shutdowned)
     }
 }
