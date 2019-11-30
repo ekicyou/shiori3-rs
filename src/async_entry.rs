@@ -10,7 +10,7 @@ use winapi::shared::minwindef::{DWORD, HGLOBAL, LPVOID};
 
 #[derive(Debug, PartialEq)]
 pub enum Error {
-    Unimplemented,
+    NotLoad,
     PoisonError,
     EventTrySendError,
     EventNotInitialized,
@@ -121,7 +121,7 @@ pub fn unload() -> bool {
     })
 }
 
-/// DLL_PROCESS_DETACH 処理：何もしない。
+/// DLL_PROCESS_DETACH 処理：何もしない。               
 /// unloadは非同期実装なのでこのタイミングでは呼び出せない。
 pub fn unload_sync() -> bool {
     true
@@ -156,7 +156,7 @@ async fn load_impl(hdir: HGLOBAL, len: usize) -> Result<EventReceiver> {
     // send event
     let hinst = unsafe { H_INST };
     let gdir = GStr::capture(hdir, len);
-    let sender = lock_sender.as_mut().ok_or(Error::Unimplemented)?;
+    let sender = lock_sender.as_mut().ok_or(Error::NotLoad)?;
     sender.try_send(Event::Load(Load {
         hinst: hinst,
         load_dir: gdir,
@@ -177,7 +177,7 @@ async fn unload_impl() -> Result<()> {
     // send event
     let rx = {
         let (tx, rx) = oneshot::channel::<Result<()>>();
-        let sender = lock_sender.as_mut().ok_or(Error::Unimplemented)?;
+        let sender = lock_sender.as_mut().ok_or(Error::NotLoad)?;
         sender.try_send(Event::Unload(Unload { res: tx }))?;
         rx
     };
@@ -191,7 +191,7 @@ async fn request_impl(hreq: HGLOBAL, len: &mut usize) -> Result<GStr> {
     // send event
     let rx = {
         let mut lock_sender = lock_sender().await?;
-        let sender = lock_sender.as_mut().ok_or(Error::Unimplemented)?;
+        let sender = lock_sender.as_mut().ok_or(Error::NotLoad)?;
         let greq = GStr::capture(hreq, *len);
         let (tx, rx) = oneshot::channel::<Result<GStr>>();
         sender.try_send(Event::Request(Request { req: greq, res: tx }))?;
