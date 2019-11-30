@@ -2,10 +2,9 @@ use crate::gstr::GStr;
 use finally_block::finally;
 use futures::channel::mpsc;
 use futures::channel::oneshot;
-use futures::stream::StreamExt;
-use std::pin::Pin;
+use futures::executor::LocalPool;
+use futures::lock::{Mutex, MutexGuard};
 use std::ptr;
-use std::sync::{Mutex, MutexGuard, PoisonError};
 use winapi::shared::minwindef::{DWORD, HGLOBAL, LPVOID};
 
 #[derive(Debug, PartialEq)]
@@ -18,11 +17,6 @@ pub enum Error {
     Shutdowned,
 }
 
-impl<T> From<PoisonError<T>> for Error {
-    fn from(_: PoisonError<T>) -> Error {
-        Error::PoisonError
-    }
-}
 impl From<mpsc::TrySendError<Event>> for Error {
     fn from(_: mpsc::TrySendError<Event>) -> Error {
         Error::EventTrySendError
@@ -77,13 +71,13 @@ lazy_static! {
     static ref WORK: Mutex<Option<RawEntry>> = Mutex::new(None);
 }
 /// ワークへのロックを取得します。
-fn work_mutex<'a>() -> Result<MutexGuard<'a, Option<RawEntry>>> {
-    Ok(WORK.lock()?)
+async fn work_mutex<'a>() -> Result<MutexGuard<'a, Option<RawEntry>>> {
+    Ok(WORK.lock().await)
 }
 
 /// ワークを破棄します。
-fn drop_work() -> Result<()> {
-    let mut lock_work = work_mutex()?;
+async fn drop_work() -> Result<()> {
+    let mut lock_work = work_mutex().await?;
     *lock_work = None;
     Ok(())
 }
@@ -113,22 +107,26 @@ impl RawEntry {
         }
     }
 
-    /// load処理。新たにapiを返す。
+    /// load処理。event receiver(stream)を返す。
     #[allow(dead_code)]
-    pub async fn load(hdir: HGLOBAL, len: usize) -> Result<RawAPI> {
-        Self::load_impl(hdir, len).await
+    pub fn load(hdir: HGLOBAL, len: usize) -> Result<mpsc::Receiver<Event>> {
+        let mut pool = LocalPool::new();
+        pool.run_until(async { Self::load_impl(hdir, len).await })
     }
 
     /// unload処理。終了を待機して結果を返す。
     #[allow(dead_code)]
-    pub async fn unload() -> bool {
-        match RawEntry::unload_impl().await {
-            Err(e) => {
-                error!("{:?}", e);
-                false
+    pub fn unload() -> bool {
+        let mut pool = LocalPool::new();
+        pool.run_until(async {
+            match RawEntry::unload_impl().await {
+                Err(e) => {
+                    error!("{:?}", e);
+                    false
+                }
+                _ => true,
             }
-            _ => true,
-        }
+        })
     }
 
     /// DLL_PROCESS_DETACH 処理：何もしない。
@@ -139,27 +137,29 @@ impl RawEntry {
 
     /// request処理。apiにRequestイベントを発行し、結果を待機して返す。
     #[allow(dead_code)]
-    pub async fn request(hreq: HGLOBAL, len: &mut usize) -> HGLOBAL {
-        match RawEntry::request_impl(hreq, len).await {
-            Err(e) => {
-                error!("{:?}", e);
-                *len = 0;
-                ptr::null_mut()
+    pub fn request(hreq: HGLOBAL, len: &mut usize) -> HGLOBAL {
+        let mut pool = LocalPool::new();
+        pool.run_until(async {
+            match RawEntry::request_impl(hreq, len).await {
+                Err(e) => {
+                    error!("{:?}", e);
+                    *len = 0;
+                    ptr::null_mut()
+                }
+                Ok(res) => {
+                    *len = res.len();
+                    res.handle()
+                }
             }
-            Ok(res) => {
-                *len = res.len();
-                res.handle()
-            }
-        }
+        })
     }
 
-    async fn load_impl(hdir: HGLOBAL, len: usize) -> Result<RawAPI> {
-        Self::unload().await;
+    async fn load_impl(hdir: HGLOBAL, len: usize) -> Result<mpsc::Receiver<Event>> {
+        Self::unload_impl().await?;
         // create api
         let (tx, rx) = mpsc::channel::<Event>(16);
-        let mut lock_work = work_mutex()?;
+        let mut lock_work = work_mutex().await?;
         *lock_work = Some(init_work(tx));
-        let api = RawAPI::new(rx)?;
 
         // send event
         let hinst = unsafe { H_INST };
@@ -170,17 +170,20 @@ impl RawEntry {
             load_dir: gdir,
         }))?;
 
-        Ok(api)
+        Ok(rx)
     }
 
     async fn unload_impl() -> Result<()> {
+        let mut lock_work = work_mutex().await?;
+        if let None = *lock_work {
+            return Ok(());
+        }
         let _f = finally(|| {
             let _ = drop_work();
         });
 
         // send event
         let rx = {
-            let mut lock_work = work_mutex()?;
             let work = lock_work.as_mut().ok_or(Error::Unimplemented)?;
             let (tx, rx) = oneshot::channel::<Result<()>>();
             work.send_event(Event::Unload(Unload { res: tx }))?;
@@ -194,7 +197,7 @@ impl RawEntry {
     async fn request_impl(hreq: HGLOBAL, len: &mut usize) -> Result<GStr> {
         // send event
         let rx = {
-            let mut lock_work = work_mutex()?;
+            let mut lock_work = work_mutex().await?;
             let work = lock_work.as_mut().ok_or(Error::Unimplemented)?;
             let greq = GStr::capture(hreq, *len);
             let (tx, rx) = oneshot::channel::<Result<GStr>>();
@@ -209,21 +212,5 @@ impl RawEntry {
     fn send_event(&mut self, event: Event) -> Result<()> {
         self.event_sender.try_send(event)?;
         Ok(())
-    }
-}
-
-pub struct RawAPI {
-    event_receiver: mpsc::Receiver<Event>,
-}
-
-impl RawAPI {
-    fn new(event_receiver: mpsc::Receiver<Event>) -> Result<RawAPI> {
-        Ok(RawAPI {
-            event_receiver: event_receiver,
-        })
-    }
-
-    pub async fn event(mut self: Pin<&mut Self>) -> Result<Event> {
-        self.event_receiver.next().await.ok_or(Error::Shutdowned)
     }
 }
