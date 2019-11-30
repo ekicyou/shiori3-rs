@@ -1,10 +1,8 @@
 use crate::gstr::GStr;
-use finally_block::finally;
 use futures::channel::mpsc;
 use futures::channel::oneshot;
 use futures::executor::LocalPool;
 use futures::lock::{Mutex, MutexGuard};
-use std::mem::drop;
 use std::ptr;
 use winapi::shared::minwindef::{DWORD, HGLOBAL, LPVOID};
 
@@ -67,12 +65,6 @@ lazy_static! {
 
 async fn lock_sender<'a>() -> Result<MutexGuard<'a, Option<EventSender>>> {
     Ok(EVENT_SENDER.lock().await)
-}
-
-async fn drop_sender() -> Result<()> {
-    let mut lock_sender = lock_sender().await?;
-    *lock_sender = None;
-    Ok(())
 }
 
 #[allow(dead_code)]
@@ -166,22 +158,16 @@ async fn load_impl(hdir: HGLOBAL, len: usize) -> Result<EventReceiver> {
 }
 
 async fn unload_impl() -> Result<()> {
-    let mut lock_sender = lock_sender().await?;
-    if let None = *lock_sender {
-        return Ok(());
-    }
-    let _f = finally(|| {
-        let _ = drop_sender();
-    });
-
     // send event
     let rx = {
-        let (tx, rx) = oneshot::channel::<Result<()>>();
+        let mut lock_sender = lock_sender().await?;
         let sender = lock_sender.as_mut().ok_or(Error::NotLoad)?;
-        sender.try_send(Event::Unload(Unload { res: tx }))?;
+        let (tx, rx) = oneshot::channel::<Result<()>>();
+        let send_rc = sender.try_send(Event::Unload(Unload { res: tx }));
+        *lock_sender = None;
+        send_rc?;
         rx
     };
-    drop(lock_sender);
 
     // wait result
     rx.await?
