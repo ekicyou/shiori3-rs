@@ -1,3 +1,4 @@
+use crate::async_error::*;
 use crate::gstr::GStr;
 use futures::channel::mpsc;
 use futures::channel::oneshot;
@@ -6,16 +7,6 @@ use futures::lock::{Mutex, MutexGuard};
 use futures::prelude::*;
 use std::ptr;
 use winapi::shared::minwindef::{DWORD, HGLOBAL, LPVOID};
-
-#[derive(Debug, PartialEq)]
-pub enum ApiError {
-    NotLoad,
-    PoisonError,
-    EventSendError,
-    EventNotInitialized,
-    EventCanceled,
-    Shutdowned,
-}
 
 impl From<mpsc::SendError> for ApiError {
     fn from(_: mpsc::SendError) -> ApiError {
@@ -27,8 +18,6 @@ impl From<oneshot::Canceled> for ApiError {
         ApiError::EventCanceled
     }
 }
-
-pub type ApiResult<T> = std::result::Result<T, ApiError>;
 
 pub struct Load {
     pub hinst: usize,

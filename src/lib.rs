@@ -5,6 +5,7 @@ extern crate log;
 
 mod api;
 pub mod async_entry;
+pub mod async_error;
 mod enc;
 mod error;
 //pub mod event_ext;
