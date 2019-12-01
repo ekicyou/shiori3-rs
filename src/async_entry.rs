@@ -8,7 +8,7 @@ use std::ptr;
 use winapi::shared::minwindef::{DWORD, HGLOBAL, LPVOID};
 
 #[derive(Debug, PartialEq)]
-pub enum Error {
+pub enum ApiError {
     NotLoad,
     PoisonError,
     EventSendError,
@@ -17,18 +17,18 @@ pub enum Error {
     Shutdowned,
 }
 
-impl From<mpsc::SendError> for Error {
-    fn from(_: mpsc::SendError) -> Error {
-        Error::EventSendError
+impl From<mpsc::SendError> for ApiError {
+    fn from(_: mpsc::SendError) -> ApiError {
+        ApiError::EventSendError
     }
 }
-impl From<oneshot::Canceled> for Error {
-    fn from(_: oneshot::Canceled) -> Error {
-        Error::EventCanceled
+impl From<oneshot::Canceled> for ApiError {
+    fn from(_: oneshot::Canceled) -> ApiError {
+        ApiError::EventCanceled
     }
 }
 
-pub type Result<T> = std::result::Result<T, Error>;
+pub type ApiResult<T> = std::result::Result<T, ApiError>;
 
 pub struct Load {
     pub hinst: usize,
@@ -36,12 +36,12 @@ pub struct Load {
 }
 
 pub struct Unload {
-    pub res: oneshot::Sender<Result<()>>,
+    pub res: oneshot::Sender<ApiResult<()>>,
 }
 
 pub struct Request {
     pub req: GStr,
-    pub res: oneshot::Sender<Result<GStr>>,
+    pub res: oneshot::Sender<ApiResult<GStr>>,
 }
 
 /// raw SHIORI3 Event
@@ -64,7 +64,7 @@ lazy_static! {
     static ref EVENT_SENDER: Mutex<Option<EventSender>> = Mutex::new(None);
 }
 
-async fn lock_sender<'a>() -> Result<MutexGuard<'a, Option<EventSender>>> {
+async fn lock_sender<'a>() -> ApiResult<MutexGuard<'a, Option<EventSender>>> {
     Ok(EVENT_SENDER.lock().await)
 }
 
@@ -94,7 +94,7 @@ pub fn dllmain(hinst: usize, ul_reason_for_call: DWORD, _lp_reserved: LPVOID) ->
 
 /// load処理。event receiver(stream)を返す。
 #[allow(dead_code)]
-pub fn load(hdir: HGLOBAL, len: usize) -> Result<EventReceiver> {
+pub fn load(hdir: HGLOBAL, len: usize) -> ApiResult<EventReceiver> {
     let mut pool = LocalPool::new();
     pool.run_until(async { load_impl(hdir, len).await })
 }
@@ -139,7 +139,7 @@ pub fn request(hreq: HGLOBAL, len: &mut usize) -> HGLOBAL {
     })
 }
 
-async fn load_impl(hdir: HGLOBAL, len: usize) -> Result<EventReceiver> {
+async fn load_impl(hdir: HGLOBAL, len: usize) -> ApiResult<EventReceiver> {
     unload_impl().await?;
     // create api
     let (tx, rx) = mpsc::channel::<Event>(16);
@@ -149,23 +149,23 @@ async fn load_impl(hdir: HGLOBAL, len: usize) -> Result<EventReceiver> {
     // send event
     let hinst = unsafe { H_INST };
     let load_dir = GStr::capture(hdir, len);
-    let sender = lock_sender.as_mut().ok_or(Error::NotLoad)?;
+    let sender = lock_sender.as_mut().ok_or(ApiError::NotLoad)?;
     sender.send(Event::Load(Load { hinst, load_dir })).await?;
 
     Ok(rx)
 }
 
-async fn unload_impl() -> Result<()> {
+async fn unload_impl() -> ApiResult<()> {
     let rc = unload_send().await;
     let _ = unload_drop().await?;
     rc
 }
-async fn unload_send() -> Result<()> {
+async fn unload_send() -> ApiResult<()> {
     // send event
     let rx = {
         let mut lock_sender = lock_sender().await?;
-        let sender = lock_sender.as_mut().ok_or(Error::NotLoad)?;
-        let (res, rx) = oneshot::channel::<Result<()>>();
+        let sender = lock_sender.as_mut().ok_or(ApiError::NotLoad)?;
+        let (res, rx) = oneshot::channel::<ApiResult<()>>();
         sender.send(Event::Unload(Unload { res })).await?;
         rx
     };
@@ -173,19 +173,19 @@ async fn unload_send() -> Result<()> {
     // wait result
     rx.await?
 }
-async fn unload_drop() -> Result<()> {
+async fn unload_drop() -> ApiResult<()> {
     let mut lock_sender = lock_sender().await?;
     *lock_sender = None;
     Ok(())
 }
 
-async fn request_impl(hreq: HGLOBAL, len: &mut usize) -> Result<GStr> {
+async fn request_impl(hreq: HGLOBAL, len: &mut usize) -> ApiResult<GStr> {
     // send event
     let rx = {
         let mut lock_sender = lock_sender().await?;
-        let sender = lock_sender.as_mut().ok_or(Error::NotLoad)?;
+        let sender = lock_sender.as_mut().ok_or(ApiError::NotLoad)?;
         let req = GStr::capture(hreq, *len);
-        let (res, rx) = oneshot::channel::<Result<GStr>>();
+        let (res, rx) = oneshot::channel::<ApiResult<GStr>>();
         sender.send(Event::Request(Request { req, res })).await?;
         rx
     };
