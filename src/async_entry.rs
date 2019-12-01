@@ -3,6 +3,7 @@ use futures::channel::mpsc;
 use futures::channel::oneshot;
 use futures::executor::LocalPool;
 use futures::lock::{Mutex, MutexGuard};
+use futures::prelude::*;
 use std::ptr;
 use winapi::shared::minwindef::{DWORD, HGLOBAL, LPVOID};
 
@@ -10,15 +11,15 @@ use winapi::shared::minwindef::{DWORD, HGLOBAL, LPVOID};
 pub enum Error {
     NotLoad,
     PoisonError,
-    EventTrySendError,
+    EventSendError,
     EventNotInitialized,
     EventCanceled,
     Shutdowned,
 }
 
-impl From<mpsc::TrySendError<Event>> for Error {
-    fn from(_: mpsc::TrySendError<Event>) -> Error {
-        Error::EventTrySendError
+impl From<mpsc::SendError> for Error {
+    fn from(_: mpsc::SendError) -> Error {
+        Error::EventSendError
     }
 }
 impl From<oneshot::Canceled> for Error {
@@ -147,30 +148,35 @@ async fn load_impl(hdir: HGLOBAL, len: usize) -> Result<EventReceiver> {
 
     // send event
     let hinst = unsafe { H_INST };
-    let gdir = GStr::capture(hdir, len);
+    let load_dir = GStr::capture(hdir, len);
     let sender = lock_sender.as_mut().ok_or(Error::NotLoad)?;
-    sender.try_send(Event::Load(Load {
-        hinst: hinst,
-        load_dir: gdir,
-    }))?;
+    sender.send(Event::Load(Load { hinst, load_dir })).await?;
 
     Ok(rx)
 }
 
 async fn unload_impl() -> Result<()> {
+    let rc = unload_send().await;
+    let _ = unload_drop().await?;
+    rc
+}
+async fn unload_send() -> Result<()> {
     // send event
     let rx = {
         let mut lock_sender = lock_sender().await?;
         let sender = lock_sender.as_mut().ok_or(Error::NotLoad)?;
-        let (tx, rx) = oneshot::channel::<Result<()>>();
-        let send_rc = sender.try_send(Event::Unload(Unload { res: tx }));
-        *lock_sender = None;
-        send_rc?;
+        let (res, rx) = oneshot::channel::<Result<()>>();
+        sender.send(Event::Unload(Unload { res })).await?;
         rx
     };
 
     // wait result
     rx.await?
+}
+async fn unload_drop() -> Result<()> {
+    let mut lock_sender = lock_sender().await?;
+    *lock_sender = None;
+    Ok(())
 }
 
 async fn request_impl(hreq: HGLOBAL, len: &mut usize) -> Result<GStr> {
@@ -178,9 +184,9 @@ async fn request_impl(hreq: HGLOBAL, len: &mut usize) -> Result<GStr> {
     let rx = {
         let mut lock_sender = lock_sender().await?;
         let sender = lock_sender.as_mut().ok_or(Error::NotLoad)?;
-        let greq = GStr::capture(hreq, *len);
-        let (tx, rx) = oneshot::channel::<Result<GStr>>();
-        sender.try_send(Event::Request(Request { req: greq, res: tx }))?;
+        let req = GStr::capture(hreq, *len);
+        let (res, rx) = oneshot::channel::<Result<GStr>>();
+        sender.send(Event::Request(Request { req, res })).await?;
         rx
     };
 
