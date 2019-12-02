@@ -1,64 +1,74 @@
 use crate::async_entry as raw;
 use crate::error::*;
-use crate::ext_raw::{RawLoadExt, RawRequestExt, RawResponseExt};
+pub use crate::ext_raw::EventResponseExt;
+use crate::ext_raw::{RawEventResponseExt, RawEventResponseExt, RawLoadExt, RawRequestExt};
 use crate::gstr::GStr;
+use std::borrow::Cow;
 use std::path::PathBuf;
 
 pub trait LoadExt {
-    fn hinst(&self) -> usize;
-    fn load_str(&self) -> ApiResult<PathBuf>;
+    fn value(self) -> (usize, ApiResult<PathBuf>);
 }
-pub trait ResponseExt<Item> {
-    fn response(self, item: ApiResult<Item>) -> ApiResult<()>;
+pub trait UnloadExt {
+    fn value(self) -> raw::EventResponse<()>;
 }
 pub trait RequestExt {
-    fn request(&self) -> ApiResult<&str>;
+    fn value<'a>(self) -> (ApiResult<Cow<'a, str>>, raw::EventResponse<GStr>);
 }
 
 pub trait StrLoadExt {
-    fn str_hinst(&self) -> usize;
-    fn str_load_str(&self) -> ApiResult<PathBuf>;
+    fn str_value(self) -> (usize, ApiResult<PathBuf>);
 }
-pub trait StrResponseExt<Item> {
-    fn str_response(self, item: ApiResult<Item>) -> ApiResult<()>;
+pub trait StrUnloadExt {
+    fn str_value(self) -> raw::EventResponse<()>;
 }
 pub trait StrRequestExt {
-    fn str_request(&self) -> ApiResult<&str>;
+    fn str_value<'a>(self) -> (ApiResult<Cow<'a, str>>, raw::EventResponse<GStr>);
 }
 
 impl<T: StrLoadExt> LoadExt for T {
-    fn hinst(&self) -> usize {
-        self.str_hinst()
-    }
-    fn load_str(&self) -> ApiResult<PathBuf> {
-        self.str_load_str()
+    fn value(self) -> (usize, ApiResult<PathBuf>) {
+        self.str_value()
     }
 }
-impl<T: StrResponseExt<Item>, Item> ResponseExt<Item> for T {
-    fn response(self, item: ApiResult<Item>) -> ApiResult<()> {
-        self.str_response(item)
+impl<T: StrUnloadExt> UnloadExt for T {
+    fn value(self) -> raw::EventResponse<()> {
+        self.str_value()
     }
 }
 impl<T: StrRequestExt> RequestExt for T {
-    fn request(&self) -> ApiResult<&str> {
-        self.str_request()
+    fn value<'a>(self) -> (ApiResult<Cow<'a, str>>, raw::EventResponse<GStr>) {
+        self.str_value()
     }
 }
 
 impl StrLoadExt for raw::Load {
-    fn str_hinst(&self) -> usize {
-        self.raw_hinst()
-    }
-    fn str_load_str(&self) -> ApiResult<PathBuf> {
-        let s = self.raw_load_str()?.to_ansi_str()?;
-        Ok(PathBuf::from(s))
+    fn str_value(self) -> (usize, ApiResult<PathBuf>) {
+        let (hinst,gstr)=self.raw_value();
+        let s = gstr.to_ansi_str();
+        (hinst,Ok(s))
     }
 }
-impl StrResponseExt<()> for raw::Unload {
-    fn str_response(self, item: ApiResult<()>) -> ApiResult<()> {
-        self.raw_response(item)
+impl StrUnloadExt for raw::Unload {
+    fn str_value(self) -> raw::EventResponse<()> {
+       self.raw_value()
     }
 }
+impl StrRequestExt for raw::Request {
+    fn str_value<'a>(self) -> (ApiResult<Cow<'a, str>>, raw::EventResponse<GStr>){
+        let (gstr,res)=self.raw_value();
+
+       self.raw_value()
+    }
+}
+impl<'a> From<GStr> for Cow<'a, str> {
+    fn from(gstr: GStr) -> Cow<'a, str> {
+        
+        Cow::Borrowed()
+        ApiError::EncodeUtf8
+    }
+}
+
 impl<'a, S: Into<&'a str>> StrResponseExt<S> for raw::Request {
     fn str_response(self, item: ApiResult<S>) -> ApiResult<()> {
         let rc = match item {
@@ -69,6 +79,7 @@ impl<'a, S: Into<&'a str>> StrResponseExt<S> for raw::Request {
     }
 }
 impl StrRequestExt for raw::Request {
+    fn str_value<'a>(self) -> (ApiResult<Cow<'a, str>>, raw::EventResponse<GStr>)
     fn str_request(&self) -> ApiResult<&str> {
         let gstr = self.raw_request();
         gstr.from_utf8()
