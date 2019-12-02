@@ -28,7 +28,7 @@ pub struct ShioriRequest<'a> {
 
 impl<'a> ShioriRequest<'a> {
     #[allow(dead_code)]
-    pub fn parse(text: &'a str) -> MyResult<ShioriRequest<'a>> {
+    pub fn parse(text: &'a str) -> ApiResult<ShioriRequest<'a>> {
         let rc = ShioriRequest::new(text);
         let it = Parser::parse(Rule::req, text)?.flatten();
         Ok(rc.parse1(it)?)
@@ -53,7 +53,7 @@ impl<'a> ShioriRequest<'a> {
     }
 
     #[allow(dead_code)]
-    fn parse1(mut self, mut it: FlatPairs<'a, Rule>) -> MyResult<ShioriRequest<'a>> {
+    fn parse1(mut self, mut it: FlatPairs<'a, Rule>) -> ApiResult<ShioriRequest<'a>> {
         let pair = match it.next() {
             Some(a) => a,
             None => return Ok(self),
@@ -83,7 +83,7 @@ impl<'a> ShioriRequest<'a> {
     }
 
     #[allow(dead_code)]
-    fn parse_key_value(&mut self, it: &mut FlatPairs<'a, Rule>) -> MyResult<()> {
+    fn parse_key_value(&mut self, it: &mut FlatPairs<'a, Rule>) -> ApiResult<()> {
         let pair = it.next().unwrap();
         let rule = pair.as_rule();
         let key = pair.as_str();
@@ -126,7 +126,7 @@ mod tests {
             .replace("\n", "\r\n");
         let grammar = src.as_str();
 
-        let req = ShioriRequest::parse(grammar).unwrap_or_else(|e| panic!("{}", e));
+        let req = ShioriRequest::parse(grammar).unwrap_or_else(|e| panic!("{:?}", e));
         assert_eq!(req.version, 30);
         assert_eq!(req.charset.unwrap(), "UTF-8");
         assert_eq!(req.sender.unwrap(), "SSP");
@@ -155,7 +155,7 @@ mod tests {
             .replace("\n", "\r\n");
         let grammar = src.as_str();
 
-        let req = ShioriRequest::parse(grammar).unwrap_or_else(|e| panic!("{}", e));
+        let req = ShioriRequest::parse(grammar).unwrap_or_else(|e| panic!("{:?}", e));
 
         assert_eq!(req.version, 30);
         assert_eq!(req.charset.unwrap(), "UTF-8");
@@ -185,7 +185,7 @@ mod tests {
             .replace("\n", "\r\n");
         let grammar = src.as_str();
 
-        let req = ShioriRequest::parse(grammar).unwrap_or_else(|e| panic!("{}", e));
+        let req = ShioriRequest::parse(grammar).unwrap_or_else(|e| panic!("{:?}", e));
 
         assert_eq!(req.version, 26);
         assert_eq!(req.charset.unwrap(), "UTF-8");

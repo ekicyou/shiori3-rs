@@ -109,18 +109,18 @@ impl GStr {
     /// 格納データを「ANSI STRING(JP環境ではSJIS)」とみなして、OsStrに変換します。
     /// MultiByteToWideChar()を利用する。
     /// SHIORI::load()文字列の取り出しに利用する。
-    pub fn to_ansi_str(&self) -> MyResult<OsString> {
+    pub fn to_ansi_str(&self) -> ApiResult<OsString> {
         let bytes = self.as_bytes();
         let s = Encoding::ANSI
             .to_string(bytes)
-            .map_err(|_| MyErrorKind::EncodeAnsi)?;
+            .map_err(|_| ApiError::EncodeAnsi)?;
         let os_str = OsString::from(s);
         Ok(os_str)
     }
 
     /// 格納データを「UTF-8」とみなして、strに変換する。
     /// SHIORI::request()文字列の取り出しに利用する。
-    pub fn to_utf8_str(&self) -> MyResult<&str> {
+    pub fn to_utf8_str(&self) -> ApiResult<&str> {
         let bytes = self.as_bytes();
         Ok(str::from_utf8(bytes)?)
     }

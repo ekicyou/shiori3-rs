@@ -1,4 +1,4 @@
-use crate::async_error::*;
+use crate::error::*;
 use crate::gstr::GStr;
 use futures::channel::mpsc;
 use futures::channel::oneshot;
@@ -7,17 +7,6 @@ use futures::lock::{Mutex, MutexGuard};
 use futures::prelude::*;
 use std::ptr;
 use winapi::shared::minwindef::{DWORD, HGLOBAL, LPVOID};
-
-impl From<mpsc::SendError> for ApiError {
-    fn from(_: mpsc::SendError) -> ApiError {
-        ApiError::EventSendError
-    }
-}
-impl From<oneshot::Canceled> for ApiError {
-    fn from(_: oneshot::Canceled) -> ApiError {
-        ApiError::EventCanceled
-    }
-}
 
 pub struct Load {
     pub hinst: usize,
@@ -48,24 +37,6 @@ pub enum Event {
 type EventSender = mpsc::Sender<Event>;
 pub type EventReceiver = mpsc::Receiver<Event>;
 
-static mut H_INST: usize = 0;
-lazy_static! {
-    static ref EVENT_SENDER: Mutex<Option<EventSender>> = Mutex::new(None);
-}
-
-async fn lock_sender<'a>() -> ApiResult<MutexGuard<'a, Option<EventSender>>> {
-    Ok(EVENT_SENDER.lock().await)
-}
-
-#[allow(dead_code)]
-const DLL_PROCESS_DETACH: DWORD = 0;
-#[allow(dead_code)]
-const DLL_PROCESS_ATTACH: DWORD = 1;
-#[allow(dead_code)]
-const DLL_THREAD_ATTACH: DWORD = 2;
-#[allow(dead_code)]
-const DLL_THREAD_DETACH: DWORD = 3;
-
 /// dllmain処理。hinstを保存するのみ。
 #[allow(dead_code)]
 pub fn dllmain(hinst: usize, ul_reason_for_call: DWORD, _lp_reserved: LPVOID) -> bool {
@@ -84,15 +55,13 @@ pub fn dllmain(hinst: usize, ul_reason_for_call: DWORD, _lp_reserved: LPVOID) ->
 /// load処理。event receiver(stream)を返す。
 #[allow(dead_code)]
 pub fn load(hdir: HGLOBAL, len: usize) -> ApiResult<EventReceiver> {
-    let mut pool = LocalPool::new();
-    pool.run_until(async { load_impl(hdir, len).await })
+    LocalPool::new().run_until(async { load_impl(hdir, len).await })
 }
 
 /// unload処理。終了を待機して結果を返す。
 #[allow(dead_code)]
 pub fn unload() -> bool {
-    let mut pool = LocalPool::new();
-    pool.run_until(async {
+    LocalPool::new().run_until(async {
         match unload_impl().await {
             Err(e) => {
                 error!("{:?}", e);
@@ -103,17 +72,10 @@ pub fn unload() -> bool {
     })
 }
 
-/// DLL_PROCESS_DETACH 処理：何もしない。               
-/// unloadは非同期実装なのでこのタイミングでは呼び出せない。
-pub fn unload_sync() -> bool {
-    true
-}
-
 /// request処理。apiにRequestイベントを発行し、結果を待機して返す。
 #[allow(dead_code)]
 pub fn request(hreq: HGLOBAL, len: &mut usize) -> HGLOBAL {
-    let mut pool = LocalPool::new();
-    pool.run_until(async {
+    LocalPool::new().run_until(async {
         match request_impl(hreq, len).await {
             Err(e) => {
                 error!("{:?}", e);
@@ -126,6 +88,30 @@ pub fn request(hreq: HGLOBAL, len: &mut usize) -> HGLOBAL {
             }
         }
     })
+}
+
+static mut H_INST: usize = 0;
+lazy_static! {
+    static ref EVENT_SENDER: Mutex<Option<EventSender>> = Mutex::new(None);
+}
+
+async fn lock_sender<'a>() -> ApiResult<MutexGuard<'a, Option<EventSender>>> {
+    Ok(EVENT_SENDER.lock().await)
+}
+
+#[allow(dead_code)]
+const DLL_PROCESS_DETACH: DWORD = 0;
+#[allow(dead_code)]
+const DLL_PROCESS_ATTACH: DWORD = 1;
+#[allow(dead_code)]
+const DLL_THREAD_ATTACH: DWORD = 2;
+#[allow(dead_code)]
+const DLL_THREAD_DETACH: DWORD = 3;
+
+/// DLL_PROCESS_DETACH 処理：何もしない。               
+/// unloadは非同期実装なのでこのタイミングでは呼び出せない。
+pub fn unload_sync() -> bool {
+    true
 }
 
 async fn load_impl(hdir: HGLOBAL, len: usize) -> ApiResult<EventReceiver> {
@@ -181,4 +167,15 @@ async fn request_impl(hreq: HGLOBAL, len: &mut usize) -> ApiResult<GStr> {
 
     // wait result
     rx.await?
+}
+
+impl From<mpsc::SendError> for ApiError {
+    fn from(_: mpsc::SendError) -> ApiError {
+        ApiError::EventSendError
+    }
+}
+impl From<oneshot::Canceled> for ApiError {
+    fn from(_: oneshot::Canceled) -> ApiError {
+        ApiError::EventCanceled
+    }
 }
