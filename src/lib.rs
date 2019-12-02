@@ -7,6 +7,7 @@ pub mod async_entry;
 mod enc;
 mod error;
 pub mod ext_raw;
+pub mod ext_str;
 mod gstr;
 mod parsers;
 mod windows;

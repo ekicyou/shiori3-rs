@@ -1,45 +1,72 @@
 use crate::async_entry as raw;
 use crate::error::*;
 use crate::gstr::GStr;
-use std::path::PathBuf;
+
+pub trait LoadExt {
+    fn hinst(&self) -> usize;
+    fn load_str(&self) -> ApiResult<&GStr>;
+}
+pub trait ResponseExt<Item> {
+    fn response(self, item: ApiResult<Item>) -> ApiResult<()>;
+}
+pub trait RequestExt {
+    fn request(&self) -> &GStr;
+}
 
 pub trait RawLoadExt {
-    fn hinst(&self) -> usize;
-    fn load_str(&self) -> ApiResult<PathBuf>;
+    fn raw_hinst(&self) -> usize;
+    fn raw_load_str(&self) -> ApiResult<&GStr>;
 }
-impl RawLoadExt for raw::Load {
+pub trait RawResponseExt<Item> {
+    fn raw_response(self, item: ApiResult<Item>) -> ApiResult<()>;
+}
+pub trait RawRequestExt {
+    fn raw_request(&self) -> &GStr;
+}
+
+impl<T: RawLoadExt> LoadExt for T {
     fn hinst(&self) -> usize {
-        self.hinst
+        self.raw_hinst()
     }
-    fn load_str(&self) -> ApiResult<PathBuf> {
-        let s = self.load_dir.to_ansi_str()?;
-        Ok(PathBuf::from(s))
+    fn load_str(&self) -> ApiResult<&GStr> {
+        self.raw_load_str()
+    }
+}
+impl<T: RawResponseExt<Item>, Item> ResponseExt<Item> for T {
+    fn response(self, item: ApiResult<Item>) -> ApiResult<()> {
+        self.raw_response(item)
+    }
+}
+impl<T: RawRequestExt> RequestExt for T {
+    fn request(&self) -> &GStr {
+        self.raw_request()
     }
 }
 
-pub trait RawResponseExt<T> {
-    fn response(self, item: ApiResult<T>) -> ApiResult<()>;
+impl RawLoadExt for raw::Load {
+    fn raw_hinst(&self) -> usize {
+        self.hinst
+    }
+    fn raw_load_str(&self) -> ApiResult<&GStr> {
+        Ok(&self.load_dir)
+    }
 }
 impl RawResponseExt<()> for raw::Unload {
-    fn response(self, item: ApiResult<()>) -> ApiResult<()> {
+    fn raw_response(self, item: ApiResult<()>) -> ApiResult<()> {
         self.res
             .send(item)
             .map_err(|_| ApiError::EventResponseNotReceived)
     }
 }
 impl RawResponseExt<GStr> for raw::Request {
-    fn response(self, item: ApiResult<GStr>) -> ApiResult<()> {
+    fn raw_response(self, item: ApiResult<GStr>) -> ApiResult<()> {
         self.res
             .send(item)
             .map_err(|_| ApiError::EventResponseNotReceived)
     }
 }
-
-pub trait RawRequestExt {
-    fn request(&self) -> &GStr;
-}
 impl RawRequestExt for raw::Request {
-    fn request(&self) -> &GStr {
+    fn raw_request(&self) -> &GStr {
         &self.req
     }
 }
