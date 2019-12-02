@@ -12,7 +12,7 @@ pub type ParseError = pest::error::Error<Rule>;
 /// SHIORI3リクエストの解析結果を格納します。
 #[derive(PartialEq, Eq, Debug)]
 pub struct ShioriRequest<'a> {
-    pub text: &'a str,
+    pub src: &'a str,
     pub version: i32,
     pub method: Rule,
     pub id: Option<&'a str>,
@@ -28,16 +28,16 @@ pub struct ShioriRequest<'a> {
 
 impl<'a> ShioriRequest<'a> {
     #[allow(dead_code)]
-    pub fn parse(text: &'a str) -> ApiResult<ShioriRequest<'a>> {
-        let rc = ShioriRequest::new(text);
-        let it = Parser::parse(Rule::req, text)?.flatten();
+    pub fn parse(src: &'a str) -> ApiResult<ShioriRequest<'a>> {
+        let rc = ShioriRequest::new(src);
+        let it = Parser::parse(Rule::req, src)?.flatten();
         Ok(rc.parse1(it)?)
     }
 
     #[allow(dead_code)]
-    fn new(text: &'a str) -> ShioriRequest<'a> {
+    fn new(src: &'a str) -> ShioriRequest<'a> {
         ShioriRequest {
-            text,
+            src,
             version: 0,
             method: Rule::req,
             id: None,

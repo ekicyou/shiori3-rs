@@ -119,11 +119,18 @@ impl GStr {
         Ok(os_str)
     }
 
-    /// 格納データを「UTF-8」とみなして、strに変換する。
-    /// SHIORI::request()文字列の取り出しに利用する。
-    pub fn to_utf8_str(&self) -> ApiResult<&str> {
+    /// Converts to a string slice.
+    /// checks to ensure that the bytes are valid UTF-8, and then does the conversion.
+    pub fn from_utf8(&self) -> ApiResult<&str> {
         let bytes = self.as_bytes();
         Ok(str::from_utf8(bytes)?)
+    }
+
+    /// Converts to a string slice
+    /// without checking that the string contains valid UTF-8.
+    pub unsafe fn from_utf8_unchecked(&self) -> &str {
+        let bytes = self.as_bytes();
+        str::from_utf8_unchecked(bytes)
     }
 }
 
@@ -132,11 +139,11 @@ fn gstr_test() {
     {
         let text = "適当なGSTR";
         let src = GStr::clone_from_slice_nofree(text.as_bytes());
-        assert_eq!(src.to_utf8_str().unwrap(), text);
+        assert_eq!(src.from_utf8().unwrap(), text);
         assert_eq!(src.len(), 13);
 
         let dst = GStr::capture(src.handle(), src.len());
-        assert_eq!(dst.to_utf8_str().unwrap(), text);
+        assert_eq!(dst.from_utf8().unwrap(), text);
     }
     {
         let text = "適当なGSTR";

@@ -71,7 +71,7 @@ impl<'a, S: Into<&'a str>> StrResponseExt<S> for raw::Request {
 impl StrRequestExt for raw::Request {
     fn str_request(&self) -> ApiResult<&str> {
         let gstr = self.raw_request();
-        gstr.to_utf8_str()
+        gstr.from_utf8()
     }
 }
 #[cfg(test)]
@@ -118,7 +118,7 @@ mod tests {
                 rx.await.unwrap()
             })
             .unwrap();
-        let res = g_res.to_utf8_str().unwrap();
+        let res = g_res.from_utf8().unwrap();
         assert_eq!(res, "RESPONSE");
     }
 }

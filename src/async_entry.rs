@@ -8,21 +8,24 @@ use futures::prelude::*;
 use std::ptr;
 use winapi::shared::minwindef::{DWORD, HGLOBAL, LPVOID};
 
+/// load event args
 pub struct Load {
     pub(crate) hinst: usize,
     pub(crate) load_dir: GStr,
 }
 
+/// unload event args
 pub struct Unload {
     pub(crate) res: oneshot::Sender<ApiResult<()>>,
 }
 
+/// request event args
 pub struct Request {
     pub(crate) req: GStr,
     pub(crate) res: oneshot::Sender<ApiResult<GStr>>,
 }
 
-/// raw SHIORI3 Event
+/// SHIORI3 Event
 pub enum Event {
     /// load(h_dir: HGLOBAL, len: usize) -> bool
     Load(Load),
@@ -34,10 +37,12 @@ pub enum Event {
     Request(Request),
 }
 
-type EventSender = mpsc::Sender<Event>;
+/// SHIORI3 Event Receiver
 pub type EventReceiver = mpsc::Receiver<Event>;
+type EventSender = mpsc::Sender<Event>;
 
-/// dllmain処理。hinstを保存するのみ。
+/// dllmain entry.
+/// Save hinst only.
 #[allow(dead_code)]
 pub fn dllmain(hinst: usize, ul_reason_for_call: DWORD, _lp_reserved: LPVOID) -> bool {
     match ul_reason_for_call {
@@ -52,13 +57,18 @@ pub fn dllmain(hinst: usize, ul_reason_for_call: DWORD, _lp_reserved: LPVOID) ->
     }
 }
 
-/// load処理。event receiver(stream)を返す。
+/// load entry.
+/// 1. Create shiori3 event stream.
+/// 2. Send Load Event.
 #[allow(dead_code)]
 pub fn load(hdir: HGLOBAL, len: usize) -> ApiResult<EventReceiver> {
     LocalPool::new().run_until(async { load_impl(hdir, len).await })
 }
 
-/// unload処理。終了を待機して結果を返す。
+/// unload entry.
+/// 1. Send Unload Event.
+/// 2. Wait event.result.
+/// 3. Drop shiori3 event stream.
 #[allow(dead_code)]
 pub fn unload() -> bool {
     LocalPool::new().run_until(async {
@@ -72,7 +82,9 @@ pub fn unload() -> bool {
     })
 }
 
-/// request処理。apiにRequestイベントを発行し、結果を待機して返す。
+/// request entry.
+/// 1. Send Request Event.
+/// 2. Wait event.result.
 #[allow(dead_code)]
 pub fn request(hreq: HGLOBAL, len: &mut usize) -> HGLOBAL {
     LocalPool::new().run_until(async {
