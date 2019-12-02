@@ -6,7 +6,7 @@ extern crate log;
 pub mod async_entry;
 mod enc;
 mod error;
-//pub mod event_ext;
+pub mod ext_raw;
 mod gstr;
 mod parsers;
 mod windows;

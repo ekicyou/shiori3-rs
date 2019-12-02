@@ -9,17 +9,17 @@ use std::ptr;
 use winapi::shared::minwindef::{DWORD, HGLOBAL, LPVOID};
 
 pub struct Load {
-    pub hinst: usize,
-    pub load_dir: GStr,
+    pub(crate) hinst: usize,
+    pub(crate) load_dir: GStr,
 }
 
 pub struct Unload {
-    pub res: oneshot::Sender<ApiResult<()>>,
+    pub(crate) res: oneshot::Sender<ApiResult<()>>,
 }
 
 pub struct Request {
-    pub req: GStr,
-    pub res: oneshot::Sender<ApiResult<GStr>>,
+    pub(crate) req: GStr,
+    pub(crate) res: oneshot::Sender<ApiResult<GStr>>,
 }
 
 /// raw SHIORI3 Event

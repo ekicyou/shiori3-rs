@@ -11,6 +11,10 @@ pub enum ApiError {
     EventCanceled,
     Shutdowned,
 
+    /* api response */
+    EventResponseNotReceived,
+
+    /* encode */
     EncodeAnsi,
     EncodeUtf8,
 
