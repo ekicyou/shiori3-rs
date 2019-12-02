@@ -25,7 +25,7 @@ pub struct Request {
     pub(crate) res: oneshot::Sender<ApiResult<GStr>>,
 }
 
-/// SHIORI3 Event
+/// SHIORI3 Raw Event
 pub enum Event {
     /// load(h_dir: HGLOBAL, len: usize) -> bool
     Load(Load),
