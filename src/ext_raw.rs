@@ -3,70 +3,70 @@ use crate::error::*;
 use crate::gstr::GStr;
 
 pub trait LoadExt {
-    fn hinst(&self) -> usize;
-    fn load_str(&self) -> ApiResult<&GStr>;
+    fn value(self) -> (usize, GStr);
 }
-pub trait ResponseExt<Item> {
-    fn response(self, item: ApiResult<Item>) -> ApiResult<()>;
+pub trait UnloadExt {
+    fn value(self) -> raw::EventResponse<()>;
 }
 pub trait RequestExt {
-    fn request(&self) -> &GStr;
+    fn value(self) -> (GStr, raw::EventResponse<GStr>);
+}
+pub trait EventResponseExt<Item> {
+    fn done(self, item: ApiResult<Item>) -> ApiResult<()>;
 }
 
 pub trait RawLoadExt {
-    fn raw_hinst(&self) -> usize;
-    fn raw_load_str(&self) -> ApiResult<&GStr>;
+    fn raw_value(self) -> (usize, GStr);
 }
-pub trait RawResponseExt<Item> {
-    fn raw_response(self, item: ApiResult<Item>) -> ApiResult<()>;
+pub trait RawUnloadExt {
+    fn raw_value(self) -> raw::EventResponse<()>;
 }
 pub trait RawRequestExt {
-    fn raw_request(&self) -> &GStr;
+    fn raw_value(self) -> (GStr, raw::EventResponse<GStr>);
 }
 
 impl<T: RawLoadExt> LoadExt for T {
-    fn hinst(&self) -> usize {
-        self.raw_hinst()
-    }
-    fn load_str(&self) -> ApiResult<&GStr> {
-        self.raw_load_str()
+    fn value(self) -> (usize, GStr) {
+        self.raw_value()
     }
 }
-impl<T: RawResponseExt<Item>, Item> ResponseExt<Item> for T {
-    fn response(self, item: ApiResult<Item>) -> ApiResult<()> {
-        self.raw_response(item)
+impl<T: RawUnloadExt> UnloadExt for T {
+    fn value(self) -> raw::EventResponse<()> {
+        self.raw_value()
     }
 }
 impl<T: RawRequestExt> RequestExt for T {
-    fn request(&self) -> &GStr {
-        self.raw_request()
+    fn value(self) -> (GStr, raw::EventResponse<GStr>) {
+        self.raw_value()
     }
 }
 
 impl RawLoadExt for raw::Load {
-    fn raw_hinst(&self) -> usize {
-        self.hinst
-    }
-    fn raw_load_str(&self) -> ApiResult<&GStr> {
-        Ok(&self.load_dir)
+    fn raw_value(self) -> (usize, GStr) {
+        (self.hinst, self.load_dir)
     }
 }
-impl RawResponseExt<()> for raw::Unload {
-    fn raw_response(self, item: ApiResult<()>) -> ApiResult<()> {
+impl RawUnloadExt for raw::Unload {
+    fn raw_value(self) -> raw::EventResponse<()> {
         self.res
-            .send(item)
-            .map_err(|_| ApiError::EventResponseNotReceived)
-    }
-}
-impl RawResponseExt<GStr> for raw::Request {
-    fn raw_response(self, item: ApiResult<GStr>) -> ApiResult<()> {
-        self.res
-            .send(item)
-            .map_err(|_| ApiError::EventResponseNotReceived)
     }
 }
 impl RawRequestExt for raw::Request {
-    fn raw_request(&self) -> &GStr {
-        &self.req
+    fn raw_value(self) -> (GStr, raw::EventResponse<GStr>) {
+        (self.req, self.res)
+    }
+}
+
+pub trait RawEventResponseExt<Item> {
+    fn raw_done(self, item: ApiResult<Item>) -> ApiResult<()>;
+}
+impl<T: RawEventResponseExt<Item>, Item> EventResponseExt<Item> for T {
+    fn done(self, item: ApiResult<Item>) -> ApiResult<()> {
+        self.raw_done(item)
+    }
+}
+impl<Item> RawEventResponseExt<Item> for raw::EventResponse<Item> {
+    fn raw_done(self, item: ApiResult<Item>) -> ApiResult<()> {
+        self.send(item)
     }
 }

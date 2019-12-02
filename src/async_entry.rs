@@ -8,6 +8,17 @@ use futures::prelude::*;
 use std::ptr;
 use winapi::shared::minwindef::{DWORD, HGLOBAL, LPVOID};
 
+/// response sender
+pub struct EventResponse<Item>(oneshot::Sender<ApiResult<Item>>);
+
+impl<Item> EventResponse<Item> {
+    pub(crate) fn send(self, item: ApiResult<Item>) -> ApiResult<()> {
+        self.0
+            .send(item)
+            .map_err(|_| ApiError::EventResponseNotReceived)
+    }
+}
+
 /// load event args
 pub struct Load {
     pub(crate) hinst: usize,
@@ -16,13 +27,13 @@ pub struct Load {
 
 /// unload event args
 pub struct Unload {
-    pub(crate) res: oneshot::Sender<ApiResult<()>>,
+    pub(crate) res: EventResponse<()>,
 }
 
 /// request event args
 pub struct Request {
     pub(crate) req: GStr,
-    pub(crate) res: oneshot::Sender<ApiResult<GStr>>,
+    pub(crate) res: EventResponse<GStr>,
 }
 
 /// SHIORI3 Raw Event
@@ -152,8 +163,12 @@ async fn unload_send() -> ApiResult<()> {
     let rx = {
         let mut lock_sender = lock_sender().await?;
         let sender = lock_sender.as_mut().ok_or(ApiError::NotLoad)?;
-        let (res, rx) = oneshot::channel::<ApiResult<()>>();
-        sender.send(Event::Unload(Unload { res })).await?;
+        let (tx, rx) = oneshot::channel::<ApiResult<()>>();
+        sender
+            .send(Event::Unload(Unload {
+                res: EventResponse(tx),
+            }))
+            .await?;
         rx
     };
 
@@ -172,8 +187,13 @@ async fn request_impl(hreq: HGLOBAL, len: &mut usize) -> ApiResult<GStr> {
         let mut lock_sender = lock_sender().await?;
         let sender = lock_sender.as_mut().ok_or(ApiError::NotLoad)?;
         let req = GStr::capture(hreq, *len);
-        let (res, rx) = oneshot::channel::<ApiResult<GStr>>();
-        sender.send(Event::Request(Request { req, res })).await?;
+        let (tx, rx) = oneshot::channel::<ApiResult<GStr>>();
+        sender
+            .send(Event::Request(Request {
+                req,
+                res: EventResponse(tx),
+            }))
+            .await?;
         rx
     };
 
