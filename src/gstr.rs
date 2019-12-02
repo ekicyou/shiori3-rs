@@ -73,6 +73,7 @@ impl GStr {
 
     /// HGLOBALを新たに作成し、textをGStrにクローンします。
     /// drop時にHGLOBALを開放しません。
+    /// shiori応答の作成に利用してください。
     #[allow(dead_code)]
     pub fn clone_from_str_nofree<'a, S: Into<&'a str>>(text: S) -> GStr {
         let s = text.into();
