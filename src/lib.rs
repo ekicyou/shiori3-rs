@@ -7,8 +7,6 @@ mod async_entry;
 mod enc;
 mod error;
 mod ext_api;
-mod ext_raw;
-//mod ext_str;
 mod gstr;
 mod parsers;
 mod windows;
@@ -21,6 +19,7 @@ pub use crate::gstr::GStr;
 pub use crate::parsers::req;
 
 /// raw api entry point
+mod ext_raw;
 pub mod raw_entry {
     pub use crate::async_entry::*;
     pub use crate::ext_raw::*;
@@ -28,6 +27,7 @@ pub mod raw_entry {
 
 /*
 /// str api entry point
+mod ext_str;
 pub mod str_entry {
     pub use crate::async_entry::*;
     pub use crate::ext_str::*;

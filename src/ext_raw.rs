@@ -4,15 +4,17 @@ use crate::ext_api as api;
 
 pub mod dst {
     use crate::ext_api as api;
-    pub type Item = crate::gstr::GStr;
-    pub trait LoadExt: api::LoadExt<Item> {}
+    pub type LOAD = crate::gstr::GStr;
+    pub type REQ = crate::gstr::GStr;
+    pub type RES = crate::gstr::GStr;
+    pub trait LoadExt: api::LoadExt<LOAD> {}
     pub trait UnloadExt: api::UnloadExt {}
-    pub trait RequestExt: api::RequestExt<Item> {}
-    pub trait EventResponseExt: api::EventResponseExt<Item> {}
+    pub trait RequestExt: api::RequestExt<REQ, RES> {}
+    pub trait EventResponseExt: api::EventResponseExt<RES> {}
 }
 
-impl api::LoadExt<dst::Item> for raw::Load {
-    fn value(self) -> (usize, dst::Item) {
+impl api::LoadExt<dst::LOAD> for raw::Load {
+    fn value(self) -> (usize, dst::LOAD) {
         (self.hinst, self.load_dir)
     }
 }
@@ -23,19 +25,20 @@ impl api::UnloadExt for raw::Unload {
     }
 }
 
-impl api::RequestExt<dst::Item> for raw::Request {
-    fn value(self) -> (dst::Item, raw::EventResponse<dst::Item>) {
+impl api::RequestExt<dst::REQ, dst::RES> for raw::Request {
+    fn value(self) -> (dst::REQ, raw::EventResponse<dst::RES>) {
         (self.req, self.res)
     }
 }
 
-impl api::EventResponseExt<dst::Item> for raw::EventResponse<dst::Item> {
-    fn done(self, item: ApiResult<dst::Item>) -> ApiResult<()> {
+impl api::EventResponseExt<dst::RES> for raw::EventResponse<dst::RES> {
+    fn done(self, item: ApiResult<dst::RES>) -> ApiResult<()> {
         self.send(item)
     }
 }
 
-impl dst::LoadExt for raw::Load {}
-impl dst::UnloadExt for raw::Unload {}
-impl dst::RequestExt for raw::Request {}
-impl dst::EventResponseExt for raw::EventResponse<dst::Item> {}
+pub use dst::{EventResponseExt, LoadExt, RequestExt, UnloadExt};
+impl LoadExt for raw::Load {}
+impl UnloadExt for raw::Unload {}
+impl RequestExt for raw::Request {}
+impl EventResponseExt for raw::EventResponse<dst::RES> {}

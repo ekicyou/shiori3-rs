@@ -1,90 +1,49 @@
 use crate::async_entry as raw;
 use crate::error::*;
-pub use crate::ext_raw::EventResponseExt;
-use crate::ext_raw::{RawEventResponseExt, RawEventResponseExt, RawLoadExt, RawRequestExt};
-use crate::gstr::GStr;
-use std::borrow::Cow;
-use std::path::PathBuf;
+use crate::ext_api as api;
 
-pub trait LoadExt {
-    fn value(self) -> (usize, ApiResult<PathBuf>);
-}
-pub trait UnloadExt {
-    fn value(self) -> raw::EventResponse<()>;
-}
-pub trait RequestExt {
-    fn value<'a>(self) -> (ApiResult<Cow<'a, str>>, raw::EventResponse<GStr>);
-}
+pub mod dst {
+    use crate::error::*;
+    use crate::ext_api as api;
+    use std::borrow::Cow;
+    use std::path::PathBuf;
+    pub type ANSI = ApiResult<PathBuf>;
+    pub type UTF8<'a> = Cow<'a, str>;
 
-pub trait StrLoadExt {
-    fn str_value(self) -> (usize, ApiResult<PathBuf>);
+    pub type LOAD = PathBuf;
+    pub type REQ<'a> = Cow<'a, str>;
+    pub type RES = String;
+    pub trait LoadExt: api::LoadExt<LOAD> {}
+    pub trait UnloadExt: api::UnloadExt {}
+    pub trait RequestExt<'a>: api::RequestExt<REQ<'a>, RES> {}
+    pub trait EventResponseExt: api::EventResponseExt<RES> {}
 }
-pub trait StrUnloadExt {
-    fn str_value(self) -> raw::EventResponse<()>;
-}
-pub trait StrRequestExt {
-    fn str_value<'a>(self) -> (ApiResult<Cow<'a, str>>, raw::EventResponse<GStr>);
-}
+use crate::ext_raw::dst as src;
 
-impl<T: StrLoadExt> LoadExt for T {
-    fn value(self) -> (usize, ApiResult<PathBuf>) {
-        self.str_value()
-    }
-}
-impl<T: StrUnloadExt> UnloadExt for T {
-    fn value(self) -> raw::EventResponse<()> {
-        self.str_value()
-    }
-}
-impl<T: StrRequestExt> RequestExt for T {
-    fn value<'a>(self) -> (ApiResult<Cow<'a, str>>, raw::EventResponse<GStr>) {
-        self.str_value()
+impl<T: src::LoadExt> api::LoadExt<dst::ANSI> for T {
+    fn value(self) -> (usize, dst::ANSI) {
+        let (hinst, load_dir) = self.value();
+        let load_dir = Into::into(load_dir);
+        (hinst, load_dir)
     }
 }
 
-impl StrLoadExt for raw::Load {
-    fn str_value(self) -> (usize, ApiResult<PathBuf>) {
-        let (hinst,gstr)=self.raw_value();
-        let s = gstr.to_ansi_str();
-        (hinst,Ok(s))
-    }
-}
-impl StrUnloadExt for raw::Unload {
-    fn str_value(self) -> raw::EventResponse<()> {
-       self.raw_value()
-    }
-}
-impl StrRequestExt for raw::Request {
-    fn str_value<'a>(self) -> (ApiResult<Cow<'a, str>>, raw::EventResponse<GStr>){
-        let (gstr,res)=self.raw_value();
-
-       self.raw_value()
-    }
-}
-impl<'a> From<GStr> for Cow<'a, str> {
-    fn from(gstr: GStr) -> Cow<'a, str> {
-        
-        Cow::Borrowed()
-        ApiError::EncodeUtf8
+impl<'a, T: src::RequestExt> api::RequestExt<dst::REQ<'a>, dst::RES> for T {
+    fn value(self) -> (dst::REQ<'a>, raw::EventResponse<dst::RES>) {
+        let (req, res) = self.value();
+        let req = Into::into(req);
+        let res = Into::into(req);
+        (req, res)
     }
 }
 
-impl<'a, S: Into<&'a str>> StrResponseExt<S> for raw::Request {
-    fn str_response(self, item: ApiResult<S>) -> ApiResult<()> {
-        let rc = match item {
-            Ok(s) => Ok(GStr::clone_from_str(s)),
-            Err(e) => Err(e),
-        };
-        self.raw_response(rc)
+impl<T: src::EventResponseExt> api::EventResponseExt<dst::RES> for T {
+    fn done(self, item: ApiResult<dst::RES>) -> ApiResult<()> {
+        let item = Into::into(item);
+        self.send(item)
     }
 }
-impl StrRequestExt for raw::Request {
-    fn str_value<'a>(self) -> (ApiResult<Cow<'a, str>>, raw::EventResponse<GStr>)
-    fn str_request(&self) -> ApiResult<&str> {
-        let gstr = self.raw_request();
-        gstr.from_utf8()
-    }
-}
+
 #[cfg(test)]
 mod tests {
     use super::*;

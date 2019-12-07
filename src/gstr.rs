@@ -3,6 +3,8 @@
 use crate::enc::{Encoder, Encoding};
 use crate::error::*;
 use std::ffi::OsString;
+use std::ops::Deref;
+use std::path::PathBuf;
 use std::str;
 use winapi::_core::slice::{from_raw_parts, from_raw_parts_mut};
 use winapi::shared::minwindef::{HGLOBAL, UINT};
@@ -131,6 +133,20 @@ impl GStr {
     pub unsafe fn from_utf8_unchecked(&self) -> &str {
         let bytes = self.as_bytes();
         str::from_utf8_unchecked(bytes)
+    }
+}
+
+impl From<GStr> for ApiResult<PathBuf> {
+    fn from(gstr: GStr) -> ApiResult<PathBuf> {
+        let s = gstr.to_ansi_str()?;
+        Ok(Into::into(s))
+    }
+}
+
+impl Deref for GStr {
+    type Target = str;
+    fn deref(&self) -> &Self::Target {
+        unsafe { self.from_utf8_unchecked() }
     }
 }
 

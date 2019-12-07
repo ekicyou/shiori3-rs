@@ -1,15 +1,15 @@
 use crate::async_entry as raw;
 use crate::error::*;
 
-pub trait LoadExt<T> {
-    fn value(self) -> (usize, T);
+pub trait LoadExt<LOAD> {
+    fn value(self) -> (usize, LOAD);
 }
 pub trait UnloadExt {
     fn value(self) -> raw::EventResponse<()>;
 }
-pub trait EventResponseExt<T> {
-    fn done(self, item: ApiResult<T>) -> ApiResult<()>;
+pub trait EventResponseExt<RES> {
+    fn done(self, item: ApiResult<RES>) -> ApiResult<()>;
 }
-pub trait RequestExt<T> {
-    fn value(self) -> (T, raw::EventResponse<T>);
+pub trait RequestExt<REQ, RES> {
+    fn value(self) -> (REQ, raw::EventResponse<RES>);
 }
