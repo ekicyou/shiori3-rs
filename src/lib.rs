@@ -6,7 +6,6 @@ extern crate log;
 mod async_entry;
 mod enc;
 mod error;
-mod ext_api;
 mod gstr;
 mod parsers;
 mod windows;
@@ -22,6 +21,7 @@ mod prelude {
     pub use crate::parsers::req;
 }
 
+mod ext_api;
 mod ext_str;
 /// str api entry point
 pub mod entry {
