@@ -11,15 +11,19 @@ mod gstr;
 mod parsers;
 mod windows;
 
-pub use crate::enc::Encoder;
-pub use crate::enc::Encoding;
-pub use crate::error::ApiError as ShioriError;
-pub use crate::error::ApiResult as ShioriResult;
-pub use crate::gstr::GStr;
-pub use crate::parsers::req;
+pub use prelude::*;
+/// prelude
+mod prelude {
+    pub use crate::enc::Encoder;
+    pub use crate::enc::Encoding;
+    pub use crate::error::ApiError as ShioriError;
+    pub use crate::error::ApiResult as ShioriResult;
+    pub use crate::gstr::{GCowStr, GPath};
+    pub use crate::parsers::req;
+}
 
-/// raw api entry point
 mod ext_str;
+/// str api entry point
 pub mod entry {
     pub use crate::async_entry::*;
     pub use crate::ext_str::*;
