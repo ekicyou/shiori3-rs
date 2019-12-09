@@ -177,7 +177,7 @@ impl<T> GStr<T> {
     }
 }
 
-pub trait TryRefValue<'a, T> {
+pub trait TryRefValue<'a, T: 'a> {
     fn try_value(&'a self) -> ApiResult<T>;
 }
 pub trait TryIntoValue<T> {

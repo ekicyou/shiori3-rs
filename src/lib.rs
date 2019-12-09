@@ -28,3 +28,5 @@ pub mod entry {
     pub use crate::async_entry::*;
     pub use crate::ext_str::*;
 }
+
+mod ext_parse;
