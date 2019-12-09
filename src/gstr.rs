@@ -2,8 +2,6 @@
 
 use crate::enc::{Encoder, Encoding};
 use crate::error::*;
-use std::borrow::Cow;
-use std::convert::AsRef;
 use std::ffi::OsString;
 use std::marker::PhantomData;
 use std::path::PathBuf;
@@ -37,13 +35,13 @@ impl<T> Drop for GStr<T> {
 }
 
 pub type GPath = GStr<PathBuf>;
-pub type GString<'a> = GStr<&'a str>;
+pub type GCowStr<'a> = GStr<&'a str>;
 
 /// HGLOBAL を str として GStr にキャプチャーします。
 /// drop時にHGLOBALを開放します。
 /// shiori::requestのHGLOBAL受け入れに利用してください。
-pub fn capture_str<'a>(h: HGLOBAL, len: usize) -> GString<'a> {
-    GString::<'a>::capture(h, len)
+pub fn capture_str<'a>(h: HGLOBAL, len: usize) -> GCowStr<'a> {
+    GCowStr::<'a>::capture(h, len)
 }
 
 /// HGLOBAL を Path として GStr にキャプチャーします。
@@ -186,7 +184,7 @@ pub trait TryIntoValue<T> {
     fn try_value(self) -> ApiResult<T>;
 }
 
-impl<'a> TryRefValue<'a, &'a str> for GString<'a> {
+impl<'a> TryRefValue<'a, &'a str> for GCowStr<'a> {
     fn try_value(&'a self) -> ApiResult<&'a str> {
         self.from_utf8()
     }

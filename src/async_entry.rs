@@ -1,6 +1,6 @@
 use crate::error::*;
 use crate::gstr;
-use crate::gstr::{GPath, GString};
+use crate::gstr::{GCowStr, GPath};
 use futures::channel::mpsc;
 use futures::channel::oneshot;
 use futures::executor::LocalPool;
@@ -34,7 +34,7 @@ pub struct Unload {
 
 /// request event args
 pub struct Request<'a> {
-    pub(crate) req: GString<'a>,
+    pub(crate) req: GCowStr<'a>,
     pub(crate) res: EventResponse<String>,
 }
 
