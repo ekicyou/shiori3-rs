@@ -6,6 +6,7 @@ extern crate log;
 mod async_entry;
 mod enc;
 mod error;
+mod ext_parse;
 mod gstr;
 mod parsers;
 mod windows;
@@ -17,6 +18,7 @@ mod prelude {
     pub use crate::enc::Encoding;
     pub use crate::error::ApiError as ShioriError;
     pub use crate::error::ApiResult as ShioriResult;
+    pub use crate::ext_parse::*;
     pub use crate::gstr::{GCowStr, GPath};
     pub use crate::parsers::req;
 }
@@ -29,4 +31,4 @@ pub mod entry {
     pub use crate::ext_str::*;
 }
 
-mod ext_parse;
+//mod ext_parse;
