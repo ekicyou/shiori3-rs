@@ -1,11 +1,13 @@
 use crate::error::*;
-use crate::gstr::GStr;
+use crate::gstr;
+use crate::gstr::{GPath, GString};
 use futures::channel::mpsc;
 use futures::channel::oneshot;
 use futures::executor::LocalPool;
 use futures::lock::{Mutex, MutexGuard};
 use futures::prelude::*;
 use std::ptr;
+use std::string::String;
 use winapi::shared::minwindef::{DWORD, HGLOBAL, LPVOID};
 
 /// response sender
@@ -22,7 +24,7 @@ impl<Item> EventResponse<Item> {
 /// load event args
 pub struct Load {
     pub(crate) hinst: usize,
-    pub(crate) load_dir: GStr,
+    pub(crate) load_dir: GPath,
 }
 
 /// unload event args
@@ -31,13 +33,13 @@ pub struct Unload {
 }
 
 /// request event args
-pub struct Request {
-    pub(crate) req: GStr,
-    pub(crate) res: EventResponse<GStr>,
+pub struct Request<'a> {
+    pub(crate) req: GString<'a>,
+    pub(crate) res: EventResponse<String>,
 }
 
 /// SHIORI3 Raw Event
-pub enum Event {
+pub enum Event<'a> {
     /// load(h_dir: HGLOBAL, len: usize) -> bool
     Load(Load),
 
@@ -45,12 +47,12 @@ pub enum Event {
     Unload(Unload),
 
     /// request(h: HGLOBAL, len: &mut usize) -> HGLOBAL
-    Request(Request),
+    Request(Request<'a>),
 }
 
 /// SHIORI3 Event Receiver
-pub type EventReceiver = mpsc::Receiver<Event>;
-type EventSender = mpsc::Sender<Event>;
+pub type EventReceiver<'a> = mpsc::Receiver<Event<'a>>;
+type EventSender<'a> = mpsc::Sender<Event<'a>>;
 
 /// dllmain entry.
 /// Save hinst only.
@@ -72,7 +74,7 @@ pub fn dllmain(hinst: usize, ul_reason_for_call: DWORD, _lp_reserved: LPVOID) ->
 /// 1. Create shiori3 event stream.
 /// 2. Send Load Event.
 #[allow(dead_code)]
-pub fn load(hdir: HGLOBAL, len: usize) -> ApiResult<EventReceiver> {
+pub fn load(hdir: HGLOBAL, len: usize) -> ApiResult<EventReceiver<'static>> {
     LocalPool::new().run_until(async { load_impl(hdir, len).await })
 }
 
@@ -106,6 +108,7 @@ pub fn request(hreq: HGLOBAL, len: &mut usize) -> HGLOBAL {
                 ptr::null_mut()
             }
             Ok(res) => {
+                let res = gstr::clone_from_str_nofree(&*res);
                 *len = res.len();
                 res.handle()
             }
@@ -115,10 +118,10 @@ pub fn request(hreq: HGLOBAL, len: &mut usize) -> HGLOBAL {
 
 static mut H_INST: usize = 0;
 lazy_static! {
-    static ref EVENT_SENDER: Mutex<Option<EventSender>> = Mutex::new(None);
+    static ref EVENT_SENDER: Mutex<Option<EventSender<'static>>> = Mutex::new(None);
 }
 
-async fn lock_sender<'a>() -> ApiResult<MutexGuard<'a, Option<EventSender>>> {
+async fn lock_sender<'a>() -> ApiResult<MutexGuard<'a, Option<EventSender<'static>>>> {
     Ok(EVENT_SENDER.lock().await)
 }
 
@@ -137,16 +140,16 @@ pub fn unload_sync() -> bool {
     true
 }
 
-async fn load_impl(hdir: HGLOBAL, len: usize) -> ApiResult<EventReceiver> {
+async fn load_impl(hdir: HGLOBAL, len: usize) -> ApiResult<EventReceiver<'static>> {
     unload_impl().await?;
     // create api
-    let (tx, rx) = mpsc::channel::<Event>(16);
+    let (tx, rx) = mpsc::channel::<Event<'static>>(16);
     let mut lock_sender = lock_sender().await?;
     *lock_sender = Some(tx);
 
     // send event
     let hinst = unsafe { H_INST };
-    let load_dir = GStr::capture(hdir, len);
+    let load_dir = gstr::capture_path(hdir, len);
     let sender = lock_sender.as_mut().ok_or(ApiError::NotLoad)?;
     sender.send(Event::Load(Load { hinst, load_dir })).await?;
 
@@ -181,13 +184,13 @@ async fn unload_drop() -> ApiResult<()> {
     Ok(())
 }
 
-async fn request_impl(hreq: HGLOBAL, len: &mut usize) -> ApiResult<GStr> {
+async fn request_impl(hreq: HGLOBAL, len: &mut usize) -> ApiResult<String> {
     // send event
     let rx = {
         let mut lock_sender = lock_sender().await?;
         let sender = lock_sender.as_mut().ok_or(ApiError::NotLoad)?;
-        let req = GStr::capture(hreq, *len);
-        let (tx, rx) = oneshot::channel::<ApiResult<GStr>>();
+        let req = gstr::capture_str(hreq, *len);
+        let (tx, rx) = oneshot::channel::<ApiResult<String>>();
         sender
             .send(Event::Request(Request {
                 req,
