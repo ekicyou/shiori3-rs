@@ -2,8 +2,10 @@
 
 use crate::enc::{Encoder, Encoding};
 use crate::error::*;
+use std::convert::AsRef;
 use std::ffi::OsString;
 use std::marker::PhantomData;
+use std::ops::Deref;
 use std::path::PathBuf;
 use std::str;
 use winapi::_core::slice::{from_raw_parts, from_raw_parts_mut};
@@ -177,16 +179,19 @@ impl<T> GStr<T> {
     }
 }
 
-pub trait TryRefValue<'a, T: 'a> {
-    fn try_value(&'a self) -> ApiResult<T>;
-}
 pub trait TryIntoValue<T> {
     fn try_value(self) -> ApiResult<T>;
 }
 
-impl<'a> TryRefValue<'a, &'a str> for GCowStr<'a> {
-    fn try_value(&'a self) -> ApiResult<&'a str> {
-        self.from_utf8()
+impl<'a> AsRef<str> for GCowStr<'a> {
+    fn as_ref(&self) -> &str {
+        unsafe { self.from_utf8_unchecked() }
+    }
+}
+impl<'a> Deref for GCowStr<'a> {
+    type Target = str;
+    fn deref(&self) -> &Self::Target {
+        self.as_ref()
     }
 }
 

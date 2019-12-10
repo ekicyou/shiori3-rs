@@ -8,7 +8,6 @@ pub trait ShioriRequestExt<'a> {
 
 impl<'a> ShioriRequestExt<'a> for GCowStr<'a> {
     fn parse_request(&'a self) -> ApiResult<ShioriRequest<'a>> {
-        let s = self.try_value()?;
-        ShioriRequest::parse(s)
+        ShioriRequest::parse(self)
     }
 }
