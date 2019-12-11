@@ -2,7 +2,7 @@
 
 use crate::enc::{Encoder, Encoding};
 use crate::error::*;
-use std::convert::AsRef;
+use std::convert::{AsRef, TryFrom};
 use std::ffi::OsString;
 use std::marker::PhantomData;
 use std::ops::Deref;
@@ -179,10 +179,6 @@ impl<T> GStr<T> {
     }
 }
 
-pub trait TryIntoValue<T> {
-    fn try_value(self) -> ApiResult<T>;
-}
-
 impl<'a> AsRef<str> for GCowStr<'a> {
     fn as_ref(&self) -> &str {
         unsafe { self.from_utf8_unchecked() }
@@ -195,9 +191,10 @@ impl<'a> Deref for GCowStr<'a> {
     }
 }
 
-impl TryIntoValue<PathBuf> for GPath {
-    fn try_value(self) -> ApiResult<PathBuf> {
-        let ansi_str = self.to_ansi_str()?;
+impl TryFrom<GPath> for PathBuf {
+    type Error = ApiError;
+    fn try_from(value: GPath) -> Result<Self, Self::Error> {
+        let ansi_str = value.to_ansi_str()?;
         Ok(Into::into(ansi_str))
     }
 }
