@@ -6,11 +6,11 @@ pub mod dst {
     use crate::ext_api as api;
     use crate::gstr::{GCowStr, GPath};
     pub type LOAD = GPath;
-    pub type REQ<'a> = GCowStr<'a>;
+    pub type REQ = GCowStr;
     pub type RES = String;
     pub trait LoadExt: api::LoadExt<LOAD> {}
     pub trait UnloadExt: api::UnloadExt {}
-    pub trait RequestExt<'a>: api::RequestExt<REQ<'a>, RES> {}
+    pub trait RequestExt: api::RequestExt<REQ, RES> {}
     pub trait EventResponseExt: api::EventResponseExt<RES> {}
 }
 
@@ -26,8 +26,8 @@ impl api::UnloadExt for raw::Unload {
     }
 }
 
-impl<'a> api::RequestExt<dst::REQ<'a>, dst::RES> for raw::Request<'a> {
-    fn value(self) -> (dst::REQ<'a>, raw::EventResponse<dst::RES>) {
+impl api::RequestExt<dst::REQ, dst::RES> for raw::Request {
+    fn value(self) -> (dst::REQ, raw::EventResponse<dst::RES>) {
         (self.req, self.res)
     }
 }
@@ -41,5 +41,5 @@ impl api::EventResponseExt<dst::RES> for raw::EventResponse<dst::RES> {
 pub use dst::{EventResponseExt, LoadExt, RequestExt, UnloadExt};
 impl LoadExt for raw::Load {}
 impl UnloadExt for raw::Unload {}
-impl<'a> RequestExt<'a> for raw::Request<'a> {}
+impl RequestExt for raw::Request {}
 impl EventResponseExt for raw::EventResponse<dst::RES> {}

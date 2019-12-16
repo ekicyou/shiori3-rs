@@ -33,13 +33,13 @@ pub struct Unload {
 }
 
 /// request event args
-pub struct Request<'a> {
-    pub(crate) req: GCowStr<'a>,
+pub struct Request {
+    pub(crate) req: GCowStr,
     pub(crate) res: EventResponse<String>,
 }
 
 /// SHIORI3 Raw Event
-pub enum Event<'a> {
+pub enum Event {
     /// load(h_dir: HGLOBAL, len: usize) -> bool
     Load(Load),
 
@@ -47,12 +47,12 @@ pub enum Event<'a> {
     Unload(Unload),
 
     /// request(h: HGLOBAL, len: &mut usize) -> HGLOBAL
-    Request(Request<'a>),
+    Request(Request),
 }
 
 /// SHIORI3 Event Receiver
-pub type EventReceiver<'a> = mpsc::Receiver<Event<'a>>;
-type EventSender<'a> = mpsc::Sender<Event<'a>>;
+pub type EventReceiver = mpsc::Receiver<Event>;
+type EventSender = mpsc::Sender<Event>;
 
 /// dllmain entry.
 /// Save hinst only.
@@ -74,7 +74,7 @@ pub fn dllmain(hinst: usize, ul_reason_for_call: DWORD, _lp_reserved: LPVOID) ->
 /// 1. Create shiori3 event stream.
 /// 2. Send Load Event.
 #[allow(dead_code)]
-pub fn load(hdir: HGLOBAL, len: usize) -> ApiResult<EventReceiver<'static>> {
+pub fn load(hdir: HGLOBAL, len: usize) -> ApiResult<EventReceiver> {
     LocalPool::new().run_until(async { load_impl(hdir, len).await })
 }
 
@@ -118,10 +118,10 @@ pub fn request(hreq: HGLOBAL, len: &mut usize) -> HGLOBAL {
 
 static mut H_INST: usize = 0;
 lazy_static! {
-    static ref EVENT_SENDER: Mutex<Option<EventSender<'static>>> = Mutex::new(None);
+    static ref EVENT_SENDER: Mutex<Option<EventSender>> = Mutex::new(None);
 }
 
-async fn lock_sender<'a>() -> ApiResult<MutexGuard<'a, Option<EventSender<'static>>>> {
+async fn lock_sender<'a>() -> ApiResult<MutexGuard<'a, Option<EventSender>>> {
     Ok(EVENT_SENDER.lock().await)
 }
 
@@ -140,10 +140,10 @@ pub fn unload_sync() -> bool {
     true
 }
 
-async fn load_impl(hdir: HGLOBAL, len: usize) -> ApiResult<EventReceiver<'static>> {
+async fn load_impl(hdir: HGLOBAL, len: usize) -> ApiResult<EventReceiver> {
     unload_impl().await?;
     // create api
-    let (tx, rx) = mpsc::channel::<Event<'static>>(16);
+    let (tx, rx) = mpsc::channel::<Event>(16);
     let mut lock_sender = lock_sender().await?;
     *lock_sender = Some(tx);
 

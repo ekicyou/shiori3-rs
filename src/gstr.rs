@@ -25,25 +25,25 @@ pub struct GStr<T> {
 }
 unsafe impl<T> Send for GStr<T> {}
 
-impl<T> Drop for GStr<T> {
-    fn drop(&mut self) {
-        if !self.has_free {
-            return;
-        }
-        unsafe {
-            GlobalFree(self.h);
-        }
-    }
+pub mod types {
+    pub struct GPath;
+    pub struct GCowStr;
 }
 
-pub type GPath = GStr<PathBuf>;
-pub type GCowStr<'a> = GStr<&'a str>;
+pub trait GPathApi {}
+impl GPathApi for types::GPath {}
+
+pub trait GCowStrApi {}
+impl GCowStrApi for types::GCowStr {}
+
+pub type GPath = GStr<types::GPath>;
+pub type GCowStr = GStr<types::GCowStr>;
 
 /// HGLOBAL を str として GStr にキャプチャーします。
 /// drop時にHGLOBALを開放します。
 /// shiori::requestのHGLOBAL受け入れに利用してください。
-pub fn capture_str<'a>(h: HGLOBAL, len: usize) -> GCowStr<'a> {
-    GCowStr::<'a>::capture(h, len)
+pub fn capture_str(h: HGLOBAL, len: usize) -> GCowStr {
+    GCowStr::capture(h, len)
 }
 
 /// HGLOBAL を Path として GStr にキャプチャーします。
@@ -57,12 +57,21 @@ pub fn capture_path(h: HGLOBAL, len: usize) -> GPath {
 /// drop時にHGLOBALを開放しません。
 /// shiori応答の作成に利用してください。
 #[allow(dead_code)]
-pub fn clone_from_str_nofree<'a, 'b, S>(text: S) -> GStr<&'a str>
+pub fn clone_from_str_nofree<'a, S>(text: S) -> GCowStr
 where
-    'b: 'a,
-    S: Into<&'b str>,
+    S: Into<&'a str>,
 {
-    GStr::<&'a str>::clone_from_str_nofree(text)
+    GCowStr::clone_from_str_nofree(text)
+}
+
+impl<T> Drop for GStr<T> {
+    fn drop(&mut self) {
+        if self.has_free {
+            unsafe {
+                GlobalFree(self.h);
+            }
+        }
+    }
 }
 
 impl<T> GStr<T> {
@@ -179,21 +188,21 @@ impl<T> GStr<T> {
     }
 }
 
-impl<'a> AsRef<str> for GCowStr<'a> {
+impl<T: GCowStrApi> AsRef<str> for GStr<T> {
     fn as_ref(&self) -> &str {
         unsafe { self.from_utf8_unchecked() }
     }
 }
-impl<'a> Deref for GCowStr<'a> {
+impl<T: GCowStrApi> Deref for GStr<T> {
     type Target = str;
     fn deref(&self) -> &Self::Target {
         self.as_ref()
     }
 }
 
-impl TryFrom<GPath> for PathBuf {
+impl<T: GPathApi> TryFrom<GStr<T>> for PathBuf {
     type Error = ApiError;
-    fn try_from(value: GPath) -> Result<Self, Self::Error> {
+    fn try_from(value: GStr<T>) -> Result<Self, Self::Error> {
         let ansi_str = value.to_ansi_str()?;
         Ok(Into::into(ansi_str))
     }
