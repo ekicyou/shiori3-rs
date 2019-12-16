@@ -15,156 +15,28 @@ use winapi::vc::vcruntime::size_t;
 
 const GMEM_FIXED: UINT = 0;
 
-/// HGLOBALを文字列にキャプチャーします。
-#[derive(Debug)]
-pub struct GStr<T> {
-    h: HGLOBAL,
-    len: usize,
-    has_free: bool,
-    phantom: PhantomData<fn() -> T>,
-}
-unsafe impl<T> Send for GStr<T> {}
-
-pub mod types {
-    pub struct GPath;
-    pub struct GCowStr;
-}
-
-pub trait GPathApi {}
-impl GPathApi for types::GPath {}
-
-pub trait GCowStrApi {}
-impl GCowStrApi for types::GCowStr {}
-
-pub type GPath = GStr<types::GPath>;
-pub type GCowStr = GStr<types::GCowStr>;
-
-/// HGLOBAL を str として GStr にキャプチャーします。
-/// drop時にHGLOBALを開放します。
-/// shiori::requestのHGLOBAL受け入れに利用してください。
-pub fn capture_str(h: HGLOBAL, len: usize) -> GCowStr {
-    GCowStr::capture(h, len)
-}
-
-/// HGLOBAL を Path として GStr にキャプチャーします。
-/// drop時にHGLOBALを開放します。
-/// shiori::loadのHGLOBAL受け入れに利用してください。
-pub fn capture_path(h: HGLOBAL, len: usize) -> GPath {
-    GPath::capture(h, len)
-}
-
-/// HGLOBALを新たに作成し、textをGStrにクローンします。
-/// drop時にHGLOBALを開放しません。
-/// shiori応答の作成に利用してください。
-#[allow(dead_code)]
-pub fn clone_from_str_nofree<'a, S>(text: S) -> GCowStr
-where
-    S: Into<&'a str>,
-{
-    GCowStr::clone_from_str_nofree(text)
-}
-
-impl<T> Drop for GStr<T> {
-    fn drop(&mut self) {
-        if self.has_free {
-            unsafe {
-                GlobalFree(self.h);
-            }
-        }
-    }
-}
-
-impl<T> GStr<T> {
-    fn new(h: HGLOBAL, len: usize, has_free: bool) -> GStr<T> {
-        GStr::<T> {
-            h,
-            len,
-            has_free,
-            phantom: Default::default(),
-        }
-    }
-
-    /// HGLOBALをGStrにキャプチャーします。
-    /// drop時にHGLOBALを開放します。
-    /// shiori::load/requestのHGLOBAL受け入れに利用してください。
-    pub fn capture(h: HGLOBAL, len: usize) -> GStr<T> {
-        Self::new(h, len, true)
-    }
-
-    /// &[u8]をHGLOBAL領域にコピーして返す。
-    fn clone_from_slice_impl(bytes: &[u8], has_free: bool) -> GStr<T> {
-        let len = bytes.len();
-        unsafe {
-            let h = GlobalAlloc(GMEM_FIXED, len as size_t);
-            let p = h as *mut u8;
-            let dst = from_raw_parts_mut::<u8>(p, len);
-            dst[..].clone_from_slice(bytes);
-            Self::new(h, len, has_free)
-        }
-    }
-
-    /// HGLOBALを新たに作成し、&[u8]をGStrにクローンします。
-    /// drop時にHGLOBALを開放しません。
-    /// shiori応答の作成に利用してください。
-    pub fn clone_from_slice_nofree(bytes: &[u8]) -> GStr<T> {
-        GStr::clone_from_slice_impl(bytes, false)
-    }
-
-    /// HGLOBALを新たに作成し、textをGStrにクローンします。
-    /// drop時にHGLOBALを開放します。
-    #[allow(dead_code)]
-    pub fn clone_from_str<'b, S>(text: S) -> GStr<T>
-    where
-        S: Into<&'b str>,
-    {
-        let s = text.into();
-        let bytes = s.as_bytes();
-        GStr::clone_from_slice_impl(bytes, true)
-    }
-
-    /// HGLOBALを新たに作成し、textをGStrにクローンします。
-    /// drop時にHGLOBALを開放しません。
-    /// shiori応答の作成に利用してください。
-    #[allow(dead_code)]
-    pub fn clone_from_str_nofree<'b, S>(text: S) -> GStr<T>
-    where
-        S: Into<&'b str>,
-    {
-        let s = text.into();
-        let bytes = s.as_bytes();
-        GStr::clone_from_slice_impl(bytes, false)
-    }
+// HGLOBAL を 文字列として管理する trait
+pub trait GStr<T> {
+    fn handle(&self) -> HGLOBAL;
+    fn len(&self) -> usize;
 
     /// 要素を&[u8]として参照します。
-    pub fn as_bytes(&self) -> &[u8] {
+    fn as_bytes(&self) -> &[u8] {
         unsafe {
-            let p = self.h as *mut u8;
-            from_raw_parts::<u8>(p, self.len)
+            let p = self.handle() as *mut u8;
+            from_raw_parts::<u8>(p, self.len())
         }
-    }
-
-    /// HGLOBALハンドルを取得します。
-    #[allow(dead_code)]
-    pub fn handle(&self) -> HGLOBAL {
-        self.h
-    }
-
-    /// 領域サイズを取得します。
-    #[allow(dead_code)]
-    pub fn len(&self) -> usize {
-        self.len
     }
 
     /// (HGLOBAL,len)を取得します。
-    #[allow(dead_code)]
-    pub fn value(&self) -> (HGLOBAL, usize) {
-        (self.h, self.len)
+    fn value(&self) -> (HGLOBAL, usize) {
+        (self.handle(), self.len())
     }
 
     /// 格納データを「ANSI STRING(JP環境ではSJIS)」とみなして、OsStrに変換します。
     /// MultiByteToWideChar()を利用する。
     /// SHIORI::load()文字列の取り出しに利用する。
-    pub fn to_ansi_str(&self) -> ApiResult<OsString> {
+    fn to_ansi_str(&self) -> ApiResult<OsString> {
         let bytes = self.as_bytes();
         let s = Encoding::ANSI
             .to_string(bytes)
@@ -175,60 +47,205 @@ impl<T> GStr<T> {
 
     /// Converts to a string slice.
     /// checks to ensure that the bytes are valid UTF-8, and then does the conversion.
-    pub fn from_utf8<'a>(&'a self) -> ApiResult<&'a str> {
+    fn from_utf8(&self) -> ApiResult<&str> {
         let bytes = self.as_bytes();
         Ok(str::from_utf8(bytes)?)
     }
 
     /// Converts to a string slice
     /// without checking that the string contains valid UTF-8.
-    pub unsafe fn from_utf8_unchecked<'a>(&'a self) -> &'a str {
+    unsafe fn from_utf8_unchecked(&self) -> &str {
         let bytes = self.as_bytes();
         str::from_utf8_unchecked(bytes)
     }
 }
 
-impl<T: GCowStrApi> AsRef<str> for GStr<T> {
+// HGLOBAL を 文字列として管理する trait
+trait GStrNew {
+    fn new(h: HGLOBAL, len: usize) -> Self;
+}
+
+trait GStrClone {
+    /// &[u8]をHGLOBAL領域にコピーして返す。
+    fn clone_from_slice(bytes: &[u8]) -> Self;
+
+    /// HGLOBALを新たに作成し、textをGStrにクローンします。
+    #[allow(dead_code)]
+    fn clone_from_str<'a, S>(text: S) -> Self
+    where
+        S: Into<&'a str>;
+}
+
+/// HGLOBALを文字列にキャプチャーします。
+/// drop時にHGLOBALを解放します。
+#[derive(Debug)]
+pub struct GStrFree<T> {
+    phantom: PhantomData<fn() -> T>,
+    h: HGLOBAL,
+    len: usize,
+}
+unsafe impl<T> Send for GStrFree<T> {}
+
+/// HGLOBAL を文字列にキャプチャーします。
+/// drop時にHGLOBALを解放しません。
+#[derive(Debug)]
+pub struct GStrNotFree<T> {
+    phantom: PhantomData<fn() -> T>,
+    h: HGLOBAL,
+    len: usize,
+}
+unsafe impl<T> Send for GStrNotFree<T> {}
+
+pub mod types {
+    pub struct GPath;
+    pub struct GCowStr;
+}
+
+#[allow(dead_code)]
+pub type GPath = GStrFree<types::GPath>;
+#[allow(dead_code)]
+pub type GCowStr = GStrFree<types::GCowStr>;
+#[allow(dead_code)]
+pub type GPathNotFree = GStrNotFree<types::GPath>;
+#[allow(dead_code)]
+pub type GCowStrNotFree = GStrNotFree<types::GCowStr>;
+
+impl<T> Drop for GStrFree<T> {
+    fn drop(&mut self) {
+        unsafe {
+            GlobalFree(self.handle());
+        }
+    }
+}
+
+impl<T> GStr<T> for GStrFree<T> {
+    fn handle(&self) -> HGLOBAL {
+        self.h
+    }
+    fn len(&self) -> usize {
+        self.len
+    }
+}
+impl<T> GStrNew for GStrFree<T> {
+    fn new(h: HGLOBAL, len: usize) -> Self {
+        Self {
+            h,
+            len,
+            phantom: Default::default(),
+        }
+    }
+}
+
+impl<T> GStr<T> for GStrNotFree<T> {
+    fn handle(&self) -> HGLOBAL {
+        self.h
+    }
+    fn len(&self) -> usize {
+        self.len
+    }
+}
+impl<T> GStrNew for GStrNotFree<T> {
+    fn new(h: HGLOBAL, len: usize) -> Self {
+        Self {
+            h,
+            len,
+            phantom: Default::default(),
+        }
+    }
+}
+
+impl<T: GStrNew> GStrClone for T {
+    /// &[u8]をHGLOBAL領域にコピーして返す。
+    fn clone_from_slice(bytes: &[u8]) -> Self {
+        let len = bytes.len();
+        let (h, len) = unsafe {
+            let h = GlobalAlloc(GMEM_FIXED, len as size_t);
+            let p = h as *mut u8;
+            let dst = from_raw_parts_mut::<u8>(p, len);
+            dst[..].clone_from_slice(bytes);
+            (h, len)
+        };
+        Self::new(h, len)
+    }
+
+    /// HGLOBALを新たに作成し、textをGStrにクローンします。
+    fn clone_from_str<'a, S>(text: S) -> Self
+    where
+        S: Into<&'a str>,
+    {
+        let s = text.into();
+        let bytes = s.as_bytes();
+        Self::clone_from_slice(bytes)
+    }
+}
+
+impl AsRef<str> for GCowStr {
     fn as_ref(&self) -> &str {
         unsafe { self.from_utf8_unchecked() }
     }
 }
-impl<T: GCowStrApi> Deref for GStr<T> {
+
+impl Deref for GCowStr {
     type Target = str;
     fn deref(&self) -> &Self::Target {
         self.as_ref()
     }
 }
 
-impl<T: GPathApi> TryFrom<GStr<T>> for PathBuf {
+impl TryFrom<GPath> for PathBuf {
     type Error = ApiError;
-    fn try_from(value: GStr<T>) -> Result<Self, Self::Error> {
+    fn try_from(value: GPath) -> Result<Self, Self::Error> {
         let ansi_str = value.to_ansi_str()?;
         Ok(Into::into(ansi_str))
     }
+}
+
+/// HGLOBAL を str として GStr にキャプチャーします。
+/// drop時にHGLOBALを開放します。
+/// shiori::requestのHGLOBAL受け入れに利用してください。
+pub fn capture_str(h: HGLOBAL, len: usize) -> GCowStr {
+    GCowStr::new(h, len)
+}
+
+/// HGLOBAL を Path として GStr にキャプチャーします。
+/// drop時にHGLOBALを開放します。
+/// shiori::loadのHGLOBAL受け入れに利用してください。
+pub fn capture_path(h: HGLOBAL, len: usize) -> GPath {
+    GPath::new(h, len)
+}
+
+/// HGLOBALを新たに作成し、textをGStrにクローンします。
+/// drop時にHGLOBALを開放しません。
+/// shiori応答の作成に利用してください。
+#[allow(dead_code)]
+pub fn clone_from_str_nofree<'a, S>(text: S) -> GCowStrNotFree
+where
+    S: Into<&'a str>,
+{
+    GCowStrNotFree::clone_from_str(text)
 }
 
 #[test]
 fn gstr_test() {
     {
         let text = "適当なGSTR";
-        let src = GStr::<&str>::clone_from_slice_nofree(text.as_bytes());
+        let src = GCowStrNotFree::clone_from_slice(text.as_bytes());
         assert_eq!(src.from_utf8().unwrap(), text);
         assert_eq!(src.len(), 13);
 
-        let dst = GStr::<&str>::capture(src.handle(), src.len());
+        let dst = GCowStr::new(src.handle(), src.len());
         assert_eq!(dst.from_utf8().unwrap(), text);
     }
     {
         let text = "適当なGSTR";
         let sjis = Encoding::ANSI.to_bytes(text).unwrap();
         assert_eq!(sjis.len(), 10);
-        let src = GStr::<PathBuf>::clone_from_slice_nofree(&sjis[..]);
+        let src = GPathNotFree::clone_from_slice(&sjis[..]);
         assert_eq!(src.len(), 10);
         let src_osstr = src.to_ansi_str().unwrap();
         assert_eq!(src_osstr.len(), 13);
 
-        let dst = GStr::<PathBuf>::capture(src.handle(), src.len());
+        let dst = GPath::new(src.handle(), src.len());
         assert_eq!(src_osstr, dst.to_ansi_str().unwrap());
 
         let src_str = src_osstr.to_str().unwrap();

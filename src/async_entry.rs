@@ -1,6 +1,6 @@
 use crate::error::*;
 use crate::gstr;
-use crate::gstr::{GCowStr, GPath};
+use crate::gstr::*;
 use futures::channel::mpsc;
 use futures::channel::oneshot;
 use futures::executor::LocalPool;
@@ -134,7 +134,7 @@ const DLL_THREAD_ATTACH: DWORD = 2;
 #[allow(dead_code)]
 const DLL_THREAD_DETACH: DWORD = 3;
 
-/// DLL_PROCESS_DETACH 処理：何もしない。               
+/// DLL_PROCESS_DETACH 処理：何もしない。
 /// unloadは非同期実装なのでこのタイミングでは呼び出せない。
 pub fn unload_sync() -> bool {
     true
