@@ -14,6 +14,10 @@ log = "0.4"
 html5ever = "0.25"
 tendril = "0.4"
 
+[dependencies.markup5ever_rcdom]
+git = "https://github.com/servo/html5ever.git"
+version = "0.1"
+
 [dev-dependencies]
 env_logger = "0.7"
 
