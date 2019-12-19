@@ -117,12 +117,12 @@ pub fn request(hreq: HGLOBAL, len: &mut usize) -> HGLOBAL {
 }
 
 static mut H_INST: usize = 0;
-lazy_static! {
-    static ref EVENT_SENDER: Mutex<Option<EventSender>> = Mutex::new(None);
-}
 
 async fn lock_sender<'a>() -> ApiResult<MutexGuard<'a, Option<EventSender>>> {
-    Ok(EVENT_SENDER.lock().await)
+    lazy_static! {
+        static ref SENDER: Mutex<Option<EventSender>> = Mutex::new(None);
+    }
+    Ok(SENDER.lock().await)
 }
 
 #[allow(dead_code)]
