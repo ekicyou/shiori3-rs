@@ -7,9 +7,10 @@ mod async_entry;
 mod enc;
 mod error;
 mod ext_parse;
-mod gstr;
 mod parsers;
 mod windows;
+
+pub mod gstr;
 
 pub use prelude::*;
 /// prelude

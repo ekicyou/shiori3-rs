@@ -6,7 +6,7 @@ use std::convert::{AsRef, TryFrom};
 use std::ffi::OsString;
 use std::marker::PhantomData;
 use std::ops::Deref;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::str;
 use winapi::_core::slice::{from_raw_parts, from_raw_parts_mut};
 use winapi::shared::minwindef::{HGLOBAL, UINT};
@@ -223,6 +223,19 @@ where
     S: Into<&'a str>,
 {
     GCowStrNotFree::clone_from_str(text)
+}
+
+/// HGLOBALを新たに作成し、pathをGStrにクローンします。
+/// drop時にHGLOBALを開放しません。
+/// loadリクエストの作成に利用してください。
+#[allow(dead_code)]
+pub fn clone_from_path_nofree<'a, P>(path: P) -> GPathNotFree
+where
+    P: Into<&'a Path>,
+{
+    let text = path.into().to_string_lossy();
+    let sjis = Encoding::ANSI.to_bytes(&text).unwrap();
+    GPathNotFree::clone_from_slice(&sjis)
 }
 
 #[test]
