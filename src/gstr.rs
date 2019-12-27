@@ -4,6 +4,7 @@ use crate::enc::{Encoder, Encoding};
 use crate::error::*;
 use std::convert::{AsRef, TryFrom};
 use std::ffi::OsString;
+use std::fmt;
 use std::marker::PhantomData;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
@@ -86,6 +87,13 @@ pub struct GStrFree<T> {
 }
 unsafe impl<T> Send for GStrFree<T> {}
 
+impl<T> fmt::Display for GStrFree<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = unsafe { self.from_utf8_unchecked() };
+        write!(f, "{}", s)
+    }
+}
+
 /// HGLOBAL を文字列にキャプチャーします。
 /// drop時にHGLOBALを解放しません。
 #[derive(Debug)]
@@ -95,6 +103,13 @@ pub struct GStrNotFree<T> {
     len: usize,
 }
 unsafe impl<T> Send for GStrNotFree<T> {}
+
+impl<T> fmt::Display for GStrNotFree<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = unsafe { self.from_utf8_unchecked() };
+        write!(f, "{}", s)
+    }
+}
 
 pub mod types {
     pub struct GPath;

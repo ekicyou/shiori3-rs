@@ -21,7 +21,7 @@ failure_derive = "0.1"
 pest = "2.1"
 pest_derive = "2.1"
 winit = "0.19"
-futures = "0.3"
+futures ="0.3"
 lazy_static = "1.4"
 
 [target."cfg(windows)".dependencies]
@@ -29,3 +29,4 @@ winapi = {version = "0.3", features = [ "winbase", "stringapiset", ] }
 
 [dev-dependencies]
 env_logger = "0.7"
+futures ={version = "0.3", features = [ "thread-pool" ] }

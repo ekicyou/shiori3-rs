@@ -13,3 +13,9 @@ pub trait EventResponseExt<RES> {
 pub trait RequestExt<REQ, RES> {
     fn value(self) -> (REQ, EventResponse<RES>);
 }
+
+impl<T> EventResponseExt<T> for EventResponse<T> {
+    fn done(self, item: ApiResult<T>) -> ApiResult<()> {
+        self.send(item)
+    }
+}

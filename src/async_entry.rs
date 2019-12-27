@@ -17,13 +17,18 @@ use winapi::shared::minwindef::{DWORD, HGLOBAL, LPVOID};
 pub fn dllmain(hinst: usize, ul_reason_for_call: DWORD, _lp_reserved: LPVOID) -> bool {
     match ul_reason_for_call {
         DLL_PROCESS_ATTACH => {
-            unsafe {
-                H_INST = hinst;
-            }
+            set_hinst(hinst);
             true
         }
         DLL_PROCESS_DETACH => unload_sync(),
         _ => true,
+    }
+}
+
+/// set H_INST
+pub fn set_hinst(hinst: usize) {
+    unsafe {
+        H_INST = hinst;
     }
 }
 
@@ -98,7 +103,8 @@ pub fn unload_sync() -> bool {
 }
 
 async fn load_impl(hdir: HGLOBAL, len: usize) -> ApiResult<EventReceiver> {
-    unload_impl().await?;
+    // load済みなら解放
+    let _ = unload_impl().await;
     // create api
     let (tx, rx) = mpsc::channel::<Event>(16);
     let mut lock_sender = lock_sender().await?;
