@@ -1,5 +1,5 @@
-use crate::async_entry as raw;
 use crate::error::*;
+use crate::event::*;
 use crate::ext_api as api;
 
 pub mod dst {
@@ -14,32 +14,32 @@ pub mod dst {
     pub trait EventResponseExt: api::EventResponseExt<RES> {}
 }
 
-impl api::LoadExt<dst::LOAD> for raw::Load {
+impl api::LoadExt<dst::LOAD> for Load {
     fn value(self) -> (usize, dst::LOAD) {
         (self.hinst, self.load_dir)
     }
 }
 
-impl api::UnloadExt for raw::Unload {
-    fn value(self) -> raw::EventResponse<()> {
+impl api::UnloadExt for Unload {
+    fn value(self) -> EventResponse<()> {
         self.res
     }
 }
 
-impl api::RequestExt<dst::REQ, dst::RES> for raw::Request {
-    fn value(self) -> (dst::REQ, raw::EventResponse<dst::RES>) {
+impl api::RequestExt<dst::REQ, dst::RES> for Request {
+    fn value(self) -> (dst::REQ, EventResponse<dst::RES>) {
         (self.req, self.res)
     }
 }
 
-impl api::EventResponseExt<dst::RES> for raw::EventResponse<dst::RES> {
+impl api::EventResponseExt<dst::RES> for EventResponse<dst::RES> {
     fn done(self, item: ApiResult<dst::RES>) -> ApiResult<()> {
         self.send(item)
     }
 }
 
 pub use dst::{EventResponseExt, LoadExt, RequestExt, UnloadExt};
-impl LoadExt for raw::Load {}
-impl UnloadExt for raw::Unload {}
-impl RequestExt for raw::Request {}
-impl EventResponseExt for raw::EventResponse<dst::RES> {}
+impl LoadExt for Load {}
+impl UnloadExt for Unload {}
+impl RequestExt for Request {}
+impl EventResponseExt for EventResponse<dst::RES> {}

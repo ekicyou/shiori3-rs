@@ -5,6 +5,7 @@ extern crate log;
 
 mod async_entry;
 mod enc;
+mod event;
 mod error;
 mod ext_parse;
 mod parsers;
@@ -28,6 +29,7 @@ mod ext_api;
 mod ext_str;
 /// str api entry point
 pub mod entry {
+    pub use crate::event::*;
     pub use crate::async_entry::*;
     pub use crate::ext_str::*;
 }
