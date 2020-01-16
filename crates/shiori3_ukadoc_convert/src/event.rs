@@ -41,8 +41,7 @@ pub fn get_events() {
     let dom = parser.one(html_text);
     let doc = &dom.document;
     let children = doc.children.borrow();
-    let items = children.iter(); //.take(2);
-    for node in items {
+    for node in children.iter() {
         println!("{:?}", node.data);
     }
 }
