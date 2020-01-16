@@ -19,12 +19,12 @@ struct RefNode<'a> {
 struct Children {
     children: RefCell<Vec<Rc<Node>>>,
 }
+/*
 impl Iterator<Item = RefNode> for Children {
     fn next(&mut self) -> Option<Self::Item> {
         None
     }
 }
-
 fn iter_ref_node(children: &RefCell<Vec<Rc<Node>>>) -> impl Iterator<Item = RefNode> {
     let children = children.clone();
     let items = children.iter().map(|n| RefNode {
@@ -33,17 +33,15 @@ fn iter_ref_node(children: &RefCell<Vec<Rc<Node>>>) -> impl Iterator<Item = RefN
     });
     items
 }
+*/
 
 pub fn get_events() {
-    let html = crate::ukadoc::LIST_SHIORI_EVENT;
+    let html_text = crate::ukadoc::LIST_SHIORI_EVENT;
     let parser = html5ever::parse_document(RcDom::default(), ParseOpts::default());
-    let dom = parser.one(html);
+    let dom = parser.one(html_text);
     let doc = &dom.document;
     let children = doc.children.borrow();
-    let items = children.iter().map(|n| RefNode {
-        data: &n.data,
-        children: &n.children,
-    }); //.take(2);
+    let items = children.iter(); //.take(2);
     for node in items {
         println!("{:?}", node.data);
     }
