@@ -16,6 +16,10 @@ struct RefNode<'a> {
     children: &'a RefCell<Vec<Rc<Node>>>,
 }
 
+fn iter_ref_node(children: &RefCell<Vec<Rc<Node>>>) -> impl Iterator<Item = RefNode> {
+    std::iter::empty::<RefNode>()
+}
+
 pub fn get_events() {
     let html = crate::ukadoc::LIST_SHIORI_EVENT;
     let parser = html5ever::parse_document(RcDom::default(), ParseOpts::default());
