@@ -16,8 +16,22 @@ struct RefNode<'a> {
     children: &'a RefCell<Vec<Rc<Node>>>,
 }
 
+struct Children {
+    children: RefCell<Vec<Rc<Node>>>,
+}
+impl Iterator<Item = RefNode> for Children {
+    fn next(&mut self) -> Option<Self::Item> {
+        None
+    }
+}
+
 fn iter_ref_node(children: &RefCell<Vec<Rc<Node>>>) -> impl Iterator<Item = RefNode> {
-    std::iter::empty::<RefNode>()
+    let children = children.clone();
+    let items = children.iter().map(|n| RefNode {
+        data: &n.data,
+        children: &n.children,
+    });
+    items
 }
 
 pub fn get_events() {
