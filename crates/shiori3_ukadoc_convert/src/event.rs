@@ -68,6 +68,12 @@ trait HandleExt {
     fn has_class(&self) -> bool {
         self.class().is_some()
     }
+    fn class_is(&self, name: &str) -> bool {
+        match self.class() {
+            Some(t) => (&t as &str) == name,
+            _ => false,
+        }
+    }
 }
 impl HandleExt for Handle {
     fn flat_tree(&self) -> FlatTreeHandle {
@@ -130,7 +136,27 @@ pub fn get_events() {
         .filter(|n| n.has_id());
     for entry in all {
         let id = entry.id().unwrap();
-        println!("id={}", id);
+        println!("# {}", id);
+        let (el_name, el_desc) = {
+            let children = entry.children.borrow();
+            let el_name = children
+                .iter()
+                .filter(|n| n.is_name(local_name!("dt")))
+                .filter(|n| n.class_is(&"entry"))
+                .next()
+                .unwrap()
+                .clone();
+            let el_desc = children
+                .iter()
+                .filter(|n| n.is_name(local_name!("dd")))
+                .filter(|n| n.class_is(&"entry"))
+                .next()
+                .unwrap()
+                .clone();
+            (el_name, el_desc)
+        };
+        println!("  name: {:?}", el_name.data);
+        println!("  desc: {:?}", el_desc.data);
     }
 }
 
