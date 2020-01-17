@@ -58,29 +58,39 @@ trait HandleExt {
     fn iter_self_and_descendant(&self) -> FlatMapHandle;
     fn is_element(&self) -> bool;
     fn is_name(&self, local_name: LocalName) -> bool;
-    fn id(&self) -> Option<StrTendril>;
+    fn attr(&self, attr_name: LocalName) -> Option<StrTendril>;
+    fn id(&self) -> Option<StrTendril> {
+        self.attr(local_name!("id"))
+    }
     fn has_id(&self) -> bool {
         self.id().is_some()
+    }
+    fn class(&self) -> Option<StrTendril> {
+        self.attr(local_name!("class"))
+    }
+    fn has_class(&self) -> bool {
+        self.class().is_some()
     }
 }
 impl HandleExt for Handle {
     fn iter_self_and_descendant(&self) -> FlatMapHandle {
         FlatMapHandle::new(self)
     }
-    fn id(&self) -> Option<StrTendril> {
+    fn attr(&self, attr_name: LocalName) -> Option<StrTendril> {
         match &self.data {
             NodeData::Element { attrs, .. } => {
-                let id = attrs
+                let value = attrs
                     .borrow()
                     .iter()
-                    .filter(|a| a.name.local == local_name!("id"))
+                    .filter(|a| a.name.local == attr_name)
                     .next()
                     .map(|a| a.value.clone());
-                id
+                value
             }
             _ => None,
         }
     }
+
     #[inline]
     fn is_element(&self) -> bool {
         match &self.data {
