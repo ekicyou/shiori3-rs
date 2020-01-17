@@ -1,11 +1,8 @@
 // https://qiita.com/nacika_ins/items/c618c503cdc0080c7db8
 
 use html5ever::driver::ParseOpts;
-use html5ever::interface::tree_builder::TreeSink;
 use html5ever::{local_name, LocalName};
 use markup5ever_rcdom::{Handle, NodeData, RcDom};
-use std::cell::RefCell;
-use std::rc::Rc;
 use tendril::stream::TendrilSink;
 use tendril::StrTendril;
 
@@ -13,15 +10,15 @@ use tendril::StrTendril;
 //&markup5ever_rcdom::NodeData
 //&std::cell::RefCell<std::vec::Vec<std::rc::Rc<markup5ever_rcdom::Node>>>
 
-struct FlatMapHandle {
+struct FlatTreeHandle {
     owner: Handle,
     index: usize,
     child_iter: Option<Box<dyn Iterator<Item = Handle>>>,
 }
 
-impl FlatMapHandle {
-    pub fn new(owner: &Handle) -> FlatMapHandle {
-        FlatMapHandle {
+impl FlatTreeHandle {
+    pub fn new(owner: &Handle) -> FlatTreeHandle {
+        FlatTreeHandle {
             owner: owner.clone(),
             index: 0,
             child_iter: Some(Box::new(Some(owner.clone()).into_iter())),
@@ -29,7 +26,7 @@ impl FlatMapHandle {
     }
 }
 
-impl Iterator for FlatMapHandle {
+impl Iterator for FlatTreeHandle {
     type Item = Handle;
     fn next(&mut self) -> Option<Handle> {
         loop {
@@ -39,13 +36,13 @@ impl Iterator for FlatMapHandle {
                         return Some(item);
                     }
                     let v = self.owner.children.borrow();
-                    if v.len() <= self.index {
-                        self.child_iter = None;
-                        return None;
-                    } else {
+                    if v.len() > self.index {
                         self.child_iter = Some(Box::new(Self::new(&v[self.index])));
                         self.index += 1;
                         continue;
+                    } else {
+                        self.child_iter = None;
+                        return None;
                     }
                 }
                 _ => return None,
@@ -55,7 +52,7 @@ impl Iterator for FlatMapHandle {
 }
 
 trait HandleExt {
-    fn iter_self_and_descendant(&self) -> FlatMapHandle;
+    fn flat_tree(&self) -> FlatTreeHandle;
     fn is_element(&self) -> bool;
     fn is_name(&self, local_name: LocalName) -> bool;
     fn attr(&self, attr_name: LocalName) -> Option<StrTendril>;
@@ -73,8 +70,8 @@ trait HandleExt {
     }
 }
 impl HandleExt for Handle {
-    fn iter_self_and_descendant(&self) -> FlatMapHandle {
-        FlatMapHandle::new(self)
+    fn flat_tree(&self) -> FlatTreeHandle {
+        FlatTreeHandle::new(self)
     }
     fn attr(&self, attr_name: LocalName) -> Option<StrTendril> {
         match &self.data {
@@ -119,7 +116,7 @@ pub fn get_events() {
         .unwrap();
     println!("{:?}", html.data);
     let html_children = html.children.borrow();
-    //
+    // body
     let body = html_children
         .iter()
         .filter(|n| n.is_name(local_name!("body")))
@@ -128,7 +125,7 @@ pub fn get_events() {
     println!("{:?}", body.data);
     // flat map
     let all = html
-        .iter_self_and_descendant()
+        .flat_tree()
         .filter(|n| n.is_name(local_name!("dl")))
         .filter(|n| n.has_id());
     for entry in all {
