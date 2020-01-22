@@ -3,11 +3,14 @@
 use html5ever::driver::ParseOpts;
 use html5ever::{local_name, LocalName};
 use markup5ever_rcdom::{Handle, NodeData, RcDom};
+use std::fmt::*;
 use tendril::stream::TendrilSink;
 use tendril::StrTendril;
 
+#[derive(Debug)]
 pub enum Error {
     Other,
+    ElementNotFound,
 }
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -61,6 +64,7 @@ trait HandleExt {
     fn is_element(&self) -> bool;
     fn is_name(&self, local_name: LocalName) -> bool;
     fn attr(&self, attr_name: LocalName) -> Option<StrTendril>;
+    fn text(&self) -> String;
     fn id(&self) -> Option<StrTendril> {
         self.attr(local_name!("id"))
     }
@@ -113,10 +117,96 @@ impl HandleExt for Handle {
             _ => false,
         }
     }
+    #[inline]
+    fn text(&self) -> String {
+        let f = HandleText { h: self };
+        format!("{}", f)
+    }
 }
+
+struct HandleText<'a> {
+    h: &'a Handle,
+}
+
+impl<'a> Display for HandleText<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        fmt_handle(self.h, f)
+    }
+}
+
+fn fmt_handle(h: &Handle, f: &mut Formatter<'_>) -> std::fmt::Result {
+    match &h.data {
+        NodeData::Text { contents } => write!(f, "{}", contents.borrow()),
+        NodeData::Element { name, .. } => match name.local {
+            local_name!("p") => fmt_p(h, f),
+            local_name!("a") => fmt_a(h, f),
+            local_name!("em") => fmt_em(h, f),
+            local_name!("strong") => fmt_strong(h, f),
+            local_name!("br") => fmt_br(h, f),
+            local_name!("dl") => fmt_dl(h, f),
+            local_name!("dt") => fmt_dt(h, f),
+            local_name!("dd") => fmt_dd(h, f),
+            local_name!("ul") => Ok(()),
+            _ => {
+                panic!("unnone element {}", name.local);
+            }
+        },
+        _ => Ok(()),
+    }
+}
+
+fn fmt_children(h: &Handle, f: &mut Formatter<'_>) -> std::fmt::Result {
+    let children = h.children.borrow();
+    for child in children.iter() {
+        fmt_handle(child, f)?;
+    }
+    Ok(())
+}
+
+fn fmt_p(h: &Handle, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fmt_children(h, f);
+    Ok(())
+}
+fn fmt_a(h: &Handle, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fmt_children(h, f)
+}
+fn fmt_em(h: &Handle, f: &mut Formatter<'_>) -> std::fmt::Result {
+    write!(f, "_")?;
+    fmt_children(h, f)?;
+    write!(f, "_")?;
+    Ok(())
+}
+fn fmt_strong(h: &Handle, f: &mut Formatter<'_>) -> std::fmt::Result {
+    write!(f, "__")?;
+    fmt_children(h, f)?;
+    write!(f, "__")?;
+    Ok(())
+}
+fn fmt_br(h: &Handle, f: &mut Formatter<'_>) -> std::fmt::Result {
+    write!(f, "\n")
+}
+fn fmt_dl(h: &Handle, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fmt_children(h, f)
+}
+fn fmt_dt(h: &Handle, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fmt_children(h, f)
+}
+fn fmt_dd(h: &Handle, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fmt_children(h, f)
+}
+
 #[derive(Debug)]
 struct EntryData {
     id: StrTendril,
+    desc: String,
+}
+
+impl Display for EntryData {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "[event.'{}']", self.id)?;
+        writeln!(f, "desc='''{}'''", self.desc)?;
+        Ok(())
+    }
 }
 
 fn read_entry(entry: &Handle) -> Result<EntryData> {
@@ -130,16 +220,24 @@ fn read_entry(entry: &Handle) -> Result<EntryData> {
             .next()
             .unwrap()
             .clone();
-        let el_desc = children
+        let el_entry = children
             .iter()
             .filter(|n| n.is_name(local_name!("dd")))
             .filter(|n| n.class_is(&"entry"))
             .next()
             .unwrap()
             .clone();
+        let children = el_entry.children.borrow();
+        let el_desc = children
+            .iter()
+            .filter(|n| n.is_name(local_name!("p")))
+            .next()
+            .unwrap()
+            .clone();
         (el_name, el_desc)
     };
-    Ok(EntryData { id })
+    let desc = el_desc.text();
+    Ok(EntryData { id, desc })
 }
 
 pub fn get_events() {
@@ -167,28 +265,8 @@ pub fn get_events() {
         .filter(|n| n.is_name(local_name!("dl")))
         .filter(|n| n.has_id());
     for entry in entrys {
-        let id = entry.id().unwrap();
-        println!("# {}", id);
-        let (el_name, el_desc) = {
-            let children = entry.children.borrow();
-            let el_name = children
-                .iter()
-                .filter(|n| n.is_name(local_name!("dt")))
-                .filter(|n| n.class_is(&"entry"))
-                .next()
-                .unwrap()
-                .clone();
-            let el_desc = children
-                .iter()
-                .filter(|n| n.is_name(local_name!("dd")))
-                .filter(|n| n.class_is(&"entry"))
-                .next()
-                .unwrap()
-                .clone();
-            (el_name, el_desc)
-        };
-        println!("  name: {:?}", el_name.data);
-        println!("  desc: {:?}", el_desc.data);
+        let data = read_entry(&entry).unwrap();
+        println!("{}\n", data);
     }
 }
 
