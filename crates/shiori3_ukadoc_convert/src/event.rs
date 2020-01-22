@@ -6,6 +6,11 @@ use markup5ever_rcdom::{Handle, NodeData, RcDom};
 use tendril::stream::TendrilSink;
 use tendril::StrTendril;
 
+pub enum Error {
+    Other,
+}
+pub type Result<T> = std::result::Result<T, Error>;
+
 //fn iter_node(node:&Node)-> impl  std::iter::Map<std::slice::Iter<'_, std::rc::Rc<markup5ever_rcdom::Node>>, [closure@crates\shiori3_ukadoc_convert\src\event.rs:14:37: 14:63]>
 //&markup5ever_rcdom::NodeData
 //&std::cell::RefCell<std::vec::Vec<std::rc::Rc<markup5ever_rcdom::Node>>>
@@ -40,14 +45,14 @@ impl Iterator for FlatTreeHandle {
                         self.child_iter = Some(Box::new(Self::new(&v[self.index])));
                         self.index += 1;
                         continue;
-                    } else {
-                        self.child_iter = None;
-                        return None;
                     }
+                    self.child_iter = None;
                 }
-                _ => return None,
+                _ => (),
             }
+            break;
         }
+        None
     }
 }
 
@@ -109,6 +114,33 @@ impl HandleExt for Handle {
         }
     }
 }
+#[derive(Debug)]
+struct EntryData {
+    id: StrTendril,
+}
+
+fn read_entry(entry: &Handle) -> Result<EntryData> {
+    let id = entry.id().unwrap();
+    let (el_name, el_desc) = {
+        let children = entry.children.borrow();
+        let el_name = children
+            .iter()
+            .filter(|n| n.is_name(local_name!("dt")))
+            .filter(|n| n.class_is(&"entry"))
+            .next()
+            .unwrap()
+            .clone();
+        let el_desc = children
+            .iter()
+            .filter(|n| n.is_name(local_name!("dd")))
+            .filter(|n| n.class_is(&"entry"))
+            .next()
+            .unwrap()
+            .clone();
+        (el_name, el_desc)
+    };
+    Ok(EntryData { id })
+}
 
 pub fn get_events() {
     let html_text = crate::ukadoc::LIST_SHIORI_EVENT;
@@ -130,11 +162,11 @@ pub fn get_events() {
         .unwrap();
     println!("{:?}", body.data);
     // flat map
-    let all = html
+    let entrys = html
         .flat_tree()
         .filter(|n| n.is_name(local_name!("dl")))
         .filter(|n| n.has_id());
-    for entry in all {
+    for entry in entrys {
         let id = entry.id().unwrap();
         println!("# {}", id);
         let (el_name, el_desc) = {
