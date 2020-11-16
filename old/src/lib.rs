@@ -7,6 +7,7 @@ mod async_entry;
 mod enc;
 mod error;
 mod event;
+mod event;
 mod ext_parse;
 mod parsers;
 mod windows;

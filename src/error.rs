@@ -1,36 +1,41 @@
 use crate::parsers::req;
 use std::str;
+use thiserror::Error;
 
-#[derive(Debug, PartialEq)]
+#[derive(Error, Debug, PartialEq)]
 pub enum ApiError {
     /* api */
+    #[error("shiori not loaded.")]
     NotLoad,
+
+    #[error("thread poison.")]
     PoisonError,
+
+    #[error("event send error.")]
     EventSendError,
+
+    #[error("event not initialized.")]
     EventNotInitialized,
+
+    #[error("event calceled.")]
     EventCanceled,
+
+    #[error("allready shutdowned.")]
     Shutdowned,
 
     /* api response */
+    #[error("response not received.")]
     EventResponseNotReceived,
 
     /* encode */
+    #[error("encode error:ansi")]
     EncodeAnsi,
-    EncodeUtf8,
 
-    ParseError(req::ParseError),
+    #[error("encode error:utf8")]
+    EncodeUtf8(#[from] std::str::Utf8Error),
+
+    #[error("shiori request parse error.")]
+    ParseError(#[from] req::ParseError),
 }
 
 pub type ApiResult<T> = std::result::Result<T, ApiError>;
-
-impl From<str::Utf8Error> for ApiError {
-    fn from(_: str::Utf8Error) -> ApiError {
-        ApiError::EncodeUtf8
-    }
-}
-
-impl From<req::ParseError> for ApiError {
-    fn from(error: req::ParseError) -> ApiError {
-        ApiError::ParseError(error.clone())
-    }
-}
