@@ -1,5 +1,4 @@
 use crate::parsers::req;
-use std::str;
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
@@ -9,10 +8,10 @@ pub enum ApiError {
     NotLoad,
 
     #[error("thread poison.")]
-    PoisonError,
+    Poison,
 
-    #[error("event send error.")]
-    EventSendError,
+    #[error("send error.")]
+    Send,
 
     #[error("event not initialized.")]
     EventNotInitialized,
@@ -31,11 +30,23 @@ pub enum ApiError {
     #[error("encode error:ansi")]
     EncodeAnsi,
 
-    #[error("encode error:utf8")]
+    #[error("encode error:utf8 {0}")]
     EncodeUtf8(#[from] std::str::Utf8Error),
 
-    #[error("shiori request parse error.")]
+    #[error("shiori request parse error. {0}")]
     ParseError(#[from] req::ParseError),
 }
 
 pub type ApiResult<T> = std::result::Result<T, ApiError>;
+
+impl<T> From<std::sync::PoisonError<T>> for ApiError {
+    fn from(src: std::sync::PoisonError<T>) -> Self {
+        Self::Poison
+    }
+}
+
+impl<T> From<std::sync::mpsc::SendError<T>> for ApiError {
+    fn from(src: std::sync::mpsc::SendError<T>) -> Self {
+        Self::Send
+    }
+}

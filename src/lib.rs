@@ -1,5 +1,5 @@
-mod di;
 mod enc;
+mod entry;
 mod error;
 mod event;
 mod gstr;
@@ -8,7 +8,6 @@ mod windows;
 
 /// prelude
 mod prelude {
-    pub use crate::di::{ProvideShioriServerAPI, ShioriServerAPI};
     pub use crate::enc::Encoder;
     pub use crate::enc::Encoding;
     pub use crate::error::{ApiError, ApiResult};
