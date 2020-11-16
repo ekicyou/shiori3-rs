@@ -22,7 +22,7 @@ static mut API: Lazy<Mutex<Rc<Option<Sender<ShioriEvent>>>>> =
 /// DI api.
 pub fn register(request_sender: Sender<ShioriEvent>) -> ApiResult<()> {
     let mut lock = (*API).lock()?;
-    *lock = Some(request_sender);
+    **lock = Some(request_sender);
     Ok(())
 }
 
