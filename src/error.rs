@@ -13,6 +13,9 @@ pub enum ApiError {
     #[error("send error.")]
     Send,
 
+    #[error("recv error. {0}")]
+    Recv(#[from] std::sync::mpsc::RecvError),
+
     #[error("event not initialized.")]
     EventNotInitialized,
 
