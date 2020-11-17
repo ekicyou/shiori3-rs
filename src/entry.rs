@@ -21,16 +21,16 @@ fn hinst() -> usize {
 
 #[allow(dead_code)]
 #[allow(non_snake_case)]
-const DLL_PROCESS_DETACH: DWORD = 0;
+pub const DLL_PROCESS_DETACH: DWORD = 0;
 #[allow(dead_code)]
 #[allow(non_snake_case)]
-const DLL_PROCESS_ATTACH: DWORD = 1;
+pub const DLL_PROCESS_ATTACH: DWORD = 1;
 #[allow(dead_code)]
 #[allow(non_snake_case)]
-const DLL_THREAD_ATTACH: DWORD = 2;
+pub const DLL_THREAD_ATTACH: DWORD = 2;
 #[allow(dead_code)]
 #[allow(non_snake_case)]
-const DLL_THREAD_DETACH: DWORD = 3;
+pub const DLL_THREAD_DETACH: DWORD = 3;
 
 /// dllmain entry.
 /// Save hinst only.
