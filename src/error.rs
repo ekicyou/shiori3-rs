@@ -43,13 +43,13 @@ pub enum ApiError {
 pub type ApiResult<T> = std::result::Result<T, ApiError>;
 
 impl<T> From<std::sync::PoisonError<T>> for ApiError {
-    fn from(src: std::sync::PoisonError<T>) -> Self {
+    fn from(_: std::sync::PoisonError<T>) -> Self {
         Self::Poison
     }
 }
 
 impl<T> From<std::sync::mpsc::SendError<T>> for ApiError {
-    fn from(src: std::sync::mpsc::SendError<T>) -> Self {
+    fn from(_: std::sync::mpsc::SendError<T>) -> Self {
         Self::Send
     }
 }
