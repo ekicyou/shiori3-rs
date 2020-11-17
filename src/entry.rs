@@ -19,12 +19,6 @@ fn hinst() -> usize {
     unsafe { H_INST }
 }
 
-struct ShioriEntryStore<TAPI: ShioriAPI> {
-    api: TAPI,
-}
-
-pub struct ShioriEntry<TAPI: ShioriAPI>(Mutex<ShioriEntryStore<TAPI>>);
-
 #[allow(dead_code)]
 #[allow(non_snake_case)]
 const DLL_PROCESS_DETACH: DWORD = 0;

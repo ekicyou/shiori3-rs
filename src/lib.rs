@@ -11,7 +11,6 @@ mod prelude {
     pub use crate::api::ShioriAPI;
     pub use crate::enc::Encoder;
     pub use crate::enc::Encoding;
-    pub use crate::entry::ShioriEntry;
     pub use crate::error::{ApiError, ApiResult};
     pub use crate::gstr::{GCowStr, GPath, GStr};
     pub use crate::parsers::req::ShioriRequest;
