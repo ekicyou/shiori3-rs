@@ -278,5 +278,12 @@ fn gstr_test() {
 
         let src_str = src_osstr.to_str().unwrap();
         assert_eq!(src_str, text);
+
+        let _ = gstr_hresult_test(dst).unwrap();
+    }
+
+    fn gstr_hresult_test(gpath: GPath) -> ApiResult<PathBuf> {
+        use std::convert::TryInto;
+        Ok(gpath.try_into()?)
     }
 }
