@@ -1,10 +1,11 @@
 mod api;
 mod enc;
-mod entry;
 mod error;
 mod gstr;
 mod parsers;
 mod windows;
+
+pub mod entry;
 
 /// prelude
 mod prelude {
