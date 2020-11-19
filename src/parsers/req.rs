@@ -1,4 +1,5 @@
 use crate::error::*;
+use log::*;
 use pest;
 use pest::iterators::FlatPairs;
 use pest::Parser as PestParser;
@@ -9,12 +10,59 @@ pub use super::req_parser::ShioriRequestParser as Parser;
 
 pub type ParseError = pest::error::Error<Rule>;
 
+#[derive(PartialEq, Eq, Debug)]
+pub struct ShioriRequestHeader {
+    pub version: i32,
+    pub method: Rule,
+}
+
+impl Default for ShioriRequestHeader {
+    fn default() -> Self {
+        ShioriRequestHeader {
+            version: 0,
+            method: Rule::req,
+        }
+    }
+}
+impl ShioriRequestHeader {
+    pub fn parse(src: &str) -> ApiResult<ShioriRequestHeader> {
+        let rc: ShioriRequestHeader = Default::default();
+        let it = Parser::parse(Rule::header, src)?.flatten();
+        rc.parse1(it)
+    }
+    fn parse1(mut self, mut it: FlatPairs<Rule>) -> ApiResult<ShioriRequestHeader> {
+        let pair = match it.next() {
+            Some(a) => a,
+            None => return Ok(self),
+        };
+        let rule = pair.as_rule();
+        match rule {
+            Rule::get => self.method = rule,
+            Rule::notify => self.method = rule,
+            Rule::header3 => self.version = 30,
+            Rule::shiori2_ver => {
+                self.version = {
+                    let nums: i32 = pair.as_str().parse().unwrap();
+                    if nums < 0 {
+                        20
+                    } else if nums > 9 {
+                        29
+                    } else {
+                        nums + 20
+                    }
+                };
+            }
+            _ => (),
+        };
+        self.parse1(it)
+    }
+}
+
 /// SHIORI3リクエストの解析結果を格納します。
 #[derive(PartialEq, Eq, Debug)]
 pub struct ShioriRequest<'a> {
     pub src: &'a str,
-    pub version: i32,
-    pub method: Rule,
+    pub header: ShioriRequestHeader,
     pub id: Option<&'a str>,
     pub sender: Option<&'a str>,
     pub security_level: Option<&'a str>,
@@ -24,6 +72,12 @@ pub struct ShioriRequest<'a> {
     pub reference: Vec<(i32, &'a str)>,
     pub dic: HashMap<String, &'a str>,
     pub key_values: Vec<(Rule, &'a str, &'a str)>,
+}
+
+impl<'a> Drop for ShioriRequest<'a> {
+    fn drop(&mut self) {
+        trace!("ShioriRequest::drop()");
+    }
 }
 
 impl<'a> ShioriRequest<'a> {
@@ -38,8 +92,7 @@ impl<'a> ShioriRequest<'a> {
     fn new(src: &'a str) -> ShioriRequest<'a> {
         ShioriRequest {
             src,
-            version: 0,
-            method: Rule::req,
+            header: Default::default(),
             id: None,
             sender: None,
             security_level: None,
@@ -61,12 +114,12 @@ impl<'a> ShioriRequest<'a> {
         let rule = pair.as_rule();
         match rule {
             Rule::key_value => self.parse_key_value(&mut it)?,
-            Rule::get => self.method = rule,
-            Rule::notify => self.method = rule,
-            Rule::header3 => self.version = 30,
+            Rule::get => self.header.method = rule,
+            Rule::notify => self.header.method = rule,
+            Rule::header3 => self.header.version = 30,
             Rule::shiori2_id => self.id = Some(pair.as_str()),
             Rule::shiori2_ver => {
-                self.version = {
+                self.header.version = {
                     let nums: i32 = pair.as_str().parse().unwrap();
                     if nums < 0 {
                         20
@@ -127,11 +180,11 @@ mod tests {
         let grammar = src.as_str();
 
         let req = ShioriRequest::parse(grammar).unwrap_or_else(|e| panic!("{:?}", e));
-        assert_eq!(req.version, 30);
+        assert_eq!(req.header.version, 30);
         assert_eq!(req.charset.unwrap(), "UTF-8");
         assert_eq!(req.sender.unwrap(), "SSP");
         assert_eq!(req.security_level.unwrap(), "local");
-        assert_eq!(req.method, Rule::get);
+        assert_eq!(req.header.method, Rule::get);
         assert_eq!(req.id.unwrap(), "version");
         assert_eq!(req.status, None);
         assert_eq!(req.base_id, None);
@@ -157,11 +210,11 @@ mod tests {
 
         let req = ShioriRequest::parse(grammar).unwrap_or_else(|e| panic!("{:?}", e));
 
-        assert_eq!(req.version, 30);
+        assert_eq!(req.header.version, 30);
         assert_eq!(req.charset.unwrap(), "UTF-8");
         assert_eq!(req.sender.unwrap(), "SSP");
         assert_eq!(req.security_level.unwrap(), "local");
-        assert_eq!(req.method, Rule::notify);
+        assert_eq!(req.header.method, Rule::notify);
         assert_eq!(req.id.unwrap(), "ownerghostname");
         assert_eq!(req.status, None);
         assert_eq!(req.base_id, None);
@@ -172,8 +225,8 @@ mod tests {
         assert_eq!(req.key_values.len(), 0);
 
         assert_eq!(req.reference.len(), 1);
-        let mut it = req.reference.into_iter();
-        assert_eq!(it.next().unwrap(), (0i32, "セキュリティボール"));
+        let mut it = req.reference.iter();
+        assert_eq!(it.next().unwrap().1, "セキュリティボール");
         assert_eq!(it.next(), None);
     }
 
@@ -187,10 +240,10 @@ mod tests {
 
         let req = ShioriRequest::parse(grammar).unwrap_or_else(|e| panic!("{:?}", e));
 
-        assert_eq!(req.version, 26);
+        assert_eq!(req.header.version, 26);
         assert_eq!(req.charset.unwrap(), "UTF-8");
         assert_eq!(req.sender.unwrap(), "SSP");
-        assert_eq!(req.method, Rule::get);
+        assert_eq!(req.header.method, Rule::get);
         assert_eq!(req.id.unwrap(), "Version");
         assert_eq!(req.security_level, None);
         assert_eq!(req.status, None);
@@ -199,5 +252,32 @@ mod tests {
         assert_eq!(req.dic.len(), 2);
         assert_eq!(req.key_values.len(), 0);
         assert_eq!(req.reference.len(), 0);
+    }
+
+    #[test]
+    fn header_1() {
+        let src = include_str!("test_data/shiori3-1.txt")
+            .replace("\r\n", "\n")
+            .replace("\r", "\n")
+            .replace("\n", "\r\n");
+        let grammar = src.as_str();
+
+        let header = ShioriRequestHeader::parse(grammar).unwrap_or_else(|e| panic!("{:?}", e));
+        assert_eq!(header.version, 30);
+        assert_eq!(header.method, Rule::get);
+    }
+
+    #[test]
+    fn header_2() {
+        let src = include_str!("test_data/shiori3-2.txt")
+            .replace("\r\n", "\n")
+            .replace("\r", "\n")
+            .replace("\n", "\r\n");
+        let grammar = src.as_str();
+
+        let header = ShioriRequestHeader::parse(grammar).unwrap_or_else(|e| panic!("{:?}", e));
+
+        assert_eq!(header.version, 30);
+        assert_eq!(header.method, Rule::notify);
     }
 }
