@@ -15,6 +15,8 @@ mod prelude {
     pub use crate::error::{ApiError, ApiResult};
     pub use crate::gstr::{GCowStr, GPath, GStr};
     pub use crate::parsers::req::{ShioriRequest, ShioriRequestHeader};
+
+    pub use crate::parsers::req::Rule as ShioriRequestRule;
 }
 pub use prelude::*;
 
