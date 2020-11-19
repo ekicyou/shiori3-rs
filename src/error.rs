@@ -8,6 +8,7 @@ pub enum ApiError {
     Unimplemented,
 
     #[error("SHIORI/3.0 204 No Content")]
+    /// SHIORI/3.0 204 No Content
     NoContent,
 
     #[error("shiori not loaded.")]
