@@ -1,0 +1,4 @@
+SHIORI/3.0 200 OK
+Charset: UTF-8
+Value: 何か喋った。
+

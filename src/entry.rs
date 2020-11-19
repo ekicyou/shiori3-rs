@@ -1,7 +1,6 @@
 use crate::gstr;
 use crate::prelude::*;
 use log::*;
-use std::ptr;
 use std::sync::Mutex;
 use winapi::shared::minwindef::{DWORD, HGLOBAL, LPVOID};
 
@@ -89,18 +88,13 @@ fn unload_impl<T: ShioriAPI>(api: &Mutex<T>) -> ApiResult<()> {
 #[allow(dead_code)]
 pub fn request<T: ShioriAPI>(api: &Mutex<T>, hreq: HGLOBAL, len: &mut usize) -> HGLOBAL {
     let req = gstr::capture_str(hreq, *len);
-    match request_impl(api, req) {
-        Err(e) => {
-            error!("{:?}", e);
-            *len = 0;
-            ptr::null_mut()
-        }
-        Ok(res) => {
-            let res = gstr::clone_from_str_nofree(&*res);
-            *len = res.len();
-            res.handle()
-        }
-    }
+    let res = match request_impl(api, req) {
+        Ok(res) => res,
+        Err(e) => crate::response::server_error(e),
+    };
+    let res = gstr::clone_from_str_nofree(&*res);
+    *len = res.len();
+    res.handle()
 }
 fn request_impl<T: ShioriAPI>(api: &Mutex<T>, req: GCowStr) -> ApiResult<String> {
     let mut lock = api.lock()?;

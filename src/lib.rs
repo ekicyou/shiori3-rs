@@ -4,6 +4,7 @@ pub mod entry;
 mod error;
 mod gstr;
 mod parsers;
+pub mod response;
 mod windows;
 
 /// prelude

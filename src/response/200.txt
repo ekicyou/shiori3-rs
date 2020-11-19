@@ -1,0 +1,2 @@
+SHIORI/3.0 200 OK
+Charset: UTF-8
