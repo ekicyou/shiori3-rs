@@ -4,6 +4,9 @@ use thiserror::Error;
 #[derive(Error, Debug, PartialEq)]
 pub enum ApiError {
     /* api */
+    #[error("unimplemented code.")]
+    Unimplemented,
+
     #[error("shiori not loaded.")]
     NotLoad,
 
