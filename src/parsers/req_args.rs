@@ -8,7 +8,7 @@ pub struct ShioriRequestArgs {
 }
 
 impl ShioriRequestArgs {
-    pub fn new(src: GCowStr) -> ApiResult<ShioriRequestArgs> {
+    pub fn new(src: GCowStr) -> ApiResult<Self> {
         let req = ShioriRequest::parse(&src)?;
         let req = unsafe { std::mem::transmute(req) };
         Ok(Self {
