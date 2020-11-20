@@ -81,14 +81,14 @@ impl<'a> Drop for ShioriRequest<'a> {
 }
 
 impl<'a> ShioriRequest<'a> {
-    pub fn parse(src: &'a str) -> ApiResult<ShioriRequest<'a>> {
+    pub fn parse(src: &'a str) -> ApiResult<Self> {
         let rc = ShioriRequest::new(src);
         let it = Parser::parse(Rule::req, src)?.flatten();
         Ok(rc.parse1(it)?)
     }
 
-    fn new(src: &'a str) -> ShioriRequest<'a> {
-        ShioriRequest {
+    fn new(src: &'a str) -> Self {
+        Self {
             src,
             header: Default::default(),
             id: None,
@@ -103,7 +103,7 @@ impl<'a> ShioriRequest<'a> {
         }
     }
 
-    fn parse1(mut self, mut it: FlatPairs<'a, Rule>) -> ApiResult<ShioriRequest<'a>> {
+    fn parse1(mut self, mut it: FlatPairs<'a, Rule>) -> ApiResult<Self> {
         let pair = match it.next() {
             Some(a) => a,
             None => return Ok(self),
