@@ -3,8 +3,7 @@ use crate::GCowStr;
 use crate::ShioriRequest;
 
 pub struct ShioriRequestArgs {
-    #[allow(dead_code)]
-    src: GCowStr,
+    _src: GCowStr,
     req: ShioriRequest<'static>,
 }
 
@@ -12,7 +11,10 @@ impl ShioriRequestArgs {
     pub fn new(src: GCowStr) -> ApiResult<ShioriRequestArgs> {
         let req = ShioriRequest::parse(&src)?;
         let req = unsafe { std::mem::transmute(req) };
-        Ok(Self { src: src, req: req })
+        Ok(Self {
+            _src: src,
+            req: req,
+        })
     }
 
     pub fn req(&self) -> &ShioriRequest<'_> {
