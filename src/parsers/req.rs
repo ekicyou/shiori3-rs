@@ -81,14 +81,12 @@ impl<'a> Drop for ShioriRequest<'a> {
 }
 
 impl<'a> ShioriRequest<'a> {
-    #[allow(dead_code)]
     pub fn parse(src: &'a str) -> ApiResult<ShioriRequest<'a>> {
         let rc = ShioriRequest::new(src);
         let it = Parser::parse(Rule::req, src)?.flatten();
         Ok(rc.parse1(it)?)
     }
 
-    #[allow(dead_code)]
     fn new(src: &'a str) -> ShioriRequest<'a> {
         ShioriRequest {
             src,
@@ -105,7 +103,6 @@ impl<'a> ShioriRequest<'a> {
         }
     }
 
-    #[allow(dead_code)]
     fn parse1(mut self, mut it: FlatPairs<'a, Rule>) -> ApiResult<ShioriRequest<'a>> {
         let pair = match it.next() {
             Some(a) => a,
@@ -135,7 +132,6 @@ impl<'a> ShioriRequest<'a> {
         self.parse1(it)
     }
 
-    #[allow(dead_code)]
     fn parse_key_value(&mut self, it: &mut FlatPairs<'a, Rule>) -> ApiResult<()> {
         let pair = it.next().unwrap();
         let rule = pair.as_rule();

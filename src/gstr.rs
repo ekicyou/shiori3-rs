@@ -253,6 +253,16 @@ where
     GPathNotFree::clone_from_slice(&sjis)
 }
 
+/// HGLOBALを新たに作成し、textをGStrにクローンします。
+/// drop時にHGLOBALを開放します。動作試験用。
+#[allow(dead_code)]
+pub fn clone_from_str<'a, S>(text: S) -> GCowStr
+where
+    S: Into<&'a str>,
+{
+    GCowStr::clone_from_str(text)
+}
+
 #[test]
 fn gstr_test() {
     {
