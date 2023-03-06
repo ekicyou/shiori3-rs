@@ -12,12 +12,12 @@ readme = "README.md"
 [dependencies]
 anyhow = "1"
 log = "0.4"
-pest = "2.1"
-pest_derive = "2.1"
+pest = "2"
+pest_derive = "2"
 thiserror = "1"
 
 [target."cfg(windows)".dependencies]
 winapi = {version = "0.3", features = [ "winbase", "stringapiset", ] }
 
 [dev-dependencies]
-env_logger = "0.6"
+env_logger = "0.10"
