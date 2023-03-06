@@ -1,7 +1,6 @@
-use crate::error::MyErrorKind;
+use crate::error::MyError;
 use crate::hglobal::GStr;
 
-use failure;
 use log::*;
 use std::borrow::Cow;
 use std::path::Path;
@@ -14,10 +13,10 @@ pub trait Shiori3: Sized {
         h_inst: usize,
         load_dir: P,
         load_dir_bytes: &[u8],
-    ) -> Result<Self, failure::Error>;
+    ) -> Result<Self, anyhow::Error>;
 
     /// SHIORIリクエストを解釈し、応答を返します。
-    fn request<'a, S: Into<&'a str>>(&mut self, req: S) -> Result<Cow<'a, str>, failure::Error>;
+    fn request<'a, S: Into<&'a str>>(&mut self, req: S) -> Result<Cow<'a, str>, anyhow::Error>;
 }
 
 #[allow(dead_code)]
@@ -34,13 +33,13 @@ impl<T: Shiori3> Shiori3 for Shiori3DI<T> {
         h_inst: usize,
         load_dir: P,
         load_dir_bytes: &[u8],
-    ) -> Result<Self, failure::Error> {
+    ) -> Result<Self, anyhow::Error> {
         let di = T::load(h_inst, load_dir, load_dir_bytes)?;
         Ok(Shiori3DI { di })
     }
 
     /// SHIORIリクエストを解釈し、応答を返します。
-    fn request<'a, S: Into<&'a str>>(&mut self, req: S) -> Result<Cow<'a, str>, failure::Error> {
+    fn request<'a, S: Into<&'a str>>(&mut self, req: S) -> Result<Cow<'a, str>, anyhow::Error> {
         self.di.request(req)
     }
 }
@@ -104,7 +103,7 @@ impl<T: Shiori3> RawShiori3<T> {
             _ => true,
         }
     }
-    fn raw_load_impl(&mut self, hdir: HGLOBAL, len: usize) -> Result<(), failure::Error> {
+    fn raw_load_impl(&mut self, hdir: HGLOBAL, len: usize) -> Result<(), anyhow::Error> {
         let gdir = GStr::capture(hdir, len);
         let load_dir = gdir.to_ansi_str()?;
         let load_dir_bytes = gdir.as_bytes();
@@ -132,11 +131,11 @@ impl<T: Shiori3> RawShiori3<T> {
         &mut self,
         hreq: HGLOBAL,
         len: usize,
-    ) -> Result<(HGLOBAL, usize), failure::Error> {
+    ) -> Result<(HGLOBAL, usize), anyhow::Error> {
         let greq = GStr::capture(hreq, len);
         let req = greq.to_utf8_str()?;
         let res = {
-            let shiori = self.shiori.as_mut().ok_or(MyErrorKind::NotInitialized)?;
+            let shiori = self.shiori.as_mut().ok_or(MyError::NotInitialized)?;
             shiori.request(req)?
         };
         let res_bytes = res.as_bytes();

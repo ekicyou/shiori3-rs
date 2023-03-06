@@ -113,7 +113,7 @@ impl GStr {
         let bytes = self.as_bytes();
         let s = Encoding::ANSI
             .to_string(bytes)
-            .map_err(|_| MyErrorKind::EncodeAnsi)?;
+            .map_err(|_| MyError::EncodeAnsi)?;
         let os_str = OsString::from(s);
         Ok(os_str)
     }
