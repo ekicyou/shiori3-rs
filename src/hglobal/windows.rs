@@ -8,37 +8,33 @@ use std::ffi::OsStr;
 use std::io::{Error, ErrorKind, Result};
 use std::os::windows::ffi::OsStrExt;
 use std::ptr;
-use winapi::_core::ptr::null;
-use winapi::_core::ptr::null_mut;
-use winapi::shared::minwindef::BOOL;
-use winapi::shared::minwindef::DWORD;
-use winapi::shared::ntdef::LPSTR;
-use winapi::um::stringapiset::{MultiByteToWideChar, WideCharToMultiByte};
+use windows_sys::Win32::Foundation::*;
+use windows_sys::Win32::Globalization::*;
 
 /// Always use precomposed characters, that is, characters having a single character value for
 /// a base or nonspacing character combination.
-pub const MB_PRECOMPOSED: DWORD = 0x0000_0001;
+pub const MB_PRECOMPOSED: u32 = 0x0000_0001;
 /// Always use decomposed characters, that is, characters in which a base character and one or more
 /// nonspacing characters each have distinct code point values.
-pub const MB_COMPOSITE: DWORD = 0x0000_0002;
+pub const MB_COMPOSITE: u32 = 0x0000_0002;
 /// Use glyph characters instead of control characters.
-pub const MB_USEGLYPHCHARS: DWORD = 0x0000_0004;
+pub const MB_USEGLYPHCHARS: u32 = 0x0000_0004;
 /// Fail if an invalid input character is encountered.
-pub const MB_ERR_INVALID_CHARS: DWORD = 0x0000_0008;
+pub const MB_ERR_INVALID_CHARS: u32 = 0x0000_0008;
 /// Convert composite characters, consisting of a base character and a nonspacing character,
 /// each with different character values.
-pub const WC_COMPOSITECHECK: DWORD = 0x0000_0200;
+pub const WC_COMPOSITECHECK: u32 = 0x0000_0200;
 /// Discard nonspacing characters during conversion.
-pub const WC_DISCARDNS: DWORD = 0x0000_0010;
+pub const WC_DISCARDNS: u32 = 0x0000_0010;
 /// Default. Generate separate characters during conversion.
-pub const WC_SEPCHARS: DWORD = 0x0000_0020;
+pub const WC_SEPCHARS: u32 = 0x0000_0020;
 /// Replace exceptions with the default character during conversion.
-pub const WC_DEFAULTCHAR: DWORD = 0x0000_0040;
+pub const WC_DEFAULTCHAR: u32 = 0x0000_0040;
 /// Fail if an invalid input character is encountered.
-pub const WC_ERR_INVALID_CHARS: DWORD = 0x0000_0080;
+pub const WC_ERR_INVALID_CHARS: u32 = 0x0000_0080;
 /// Translate any Unicode characters that do not translate directly to multibyte equivalents to
 /// the default character specified by lpDefaultChar.
-pub const WC_NO_BEST_FIT_CHARS: DWORD = 0x0000_0400;
+pub const WC_NO_BEST_FIT_CHARS: u32 = 0x0000_0400;
 
 /// Encoding for use WinAPI calls: MultiByteToWideChar and WideCharToMultiByte.
 pub struct EncoderCodePage(pub u32);
@@ -65,11 +61,7 @@ impl Encoder for EncoderCodePage {
 ///                    in the specified code page.
 ///
 /// Returns `Err` if an invalid input character is encountered and `default_char` is `None`.
-pub fn string_to_multibyte(
-    codepage: DWORD,
-    data: &str,
-    default_char: Option<u8>,
-) -> Result<Vec<u8>> {
+pub fn string_to_multibyte(codepage: u32, data: &str, default_char: Option<u8>) -> Result<Vec<u8>> {
     let wstr: Vec<u16> = OsStr::new(data).encode_wide().collect();
     wide_char_to_multi_byte(
         codepage,
@@ -94,11 +86,7 @@ pub fn string_to_multibyte(
 ///
 /// See https://msdn.microsoft.com/en-us/library/windows/desktop/dd319072(v=vs.85).aspx
 /// for more details.
-pub fn multi_byte_to_wide_char(
-    codepage: DWORD,
-    flags: DWORD,
-    multi_byte_str: &[u8],
-) -> Result<String> {
+pub fn multi_byte_to_wide_char(codepage: u32, flags: u32, multi_byte_str: &[u8]) -> Result<String> {
     // Empty string
     if multi_byte_str.is_empty() {
         return Ok(String::new());
@@ -108,8 +96,8 @@ pub fn multi_byte_to_wide_char(
         let len = MultiByteToWideChar(
             codepage,
             flags,
-            multi_byte_str.as_ptr() as LPSTR,
-            multi_byte_str.len() as i32,
+            multi_byte_str.as_ptr() as _,
+            multi_byte_str.len() as _,
             ptr::null_mut(),
             0,
         );
@@ -120,8 +108,8 @@ pub fn multi_byte_to_wide_char(
             let len = MultiByteToWideChar(
                 codepage,
                 flags,
-                multi_byte_str.as_ptr() as LPSTR,
-                multi_byte_str.len() as i32,
+                multi_byte_str.as_ptr() as _,
+                multi_byte_str.len() as _,
                 wstr.as_mut_ptr(),
                 len,
             );
@@ -139,8 +127,8 @@ pub fn multi_byte_to_wide_char(
 /// See https://msdn.microsoft.com/ru-ru/library/windows/desktop/dd374130(v=vs.85).aspx
 /// for more details.
 pub fn wide_char_to_multi_byte(
-    codepage: DWORD,
-    flags: DWORD,
+    codepage: u32,
+    flags: u32,
     wide_char_str: &[u16],
     default_char: Option<u8>,
     use_default_char_flag: bool,
@@ -155,11 +143,11 @@ pub fn wide_char_to_multi_byte(
             codepage,
             flags,
             wide_char_str.as_ptr(),
-            wide_char_str.len() as i32,
-            null_mut(),
+            wide_char_str.len() as _,
+            ptr::null_mut(),
             0,
-            null(),
-            null_mut(),
+            ptr::null(),
+            ptr::null_mut(),
         );
 
         if len > 0 {
@@ -175,17 +163,17 @@ pub fn wide_char_to_multi_byte(
                 codepage,
                 flags,
                 wide_char_str.as_ptr(),
-                wide_char_str.len() as i32,
-                astr.as_mut_ptr() as LPSTR,
+                wide_char_str.len() as _,
+                astr.as_mut_ptr() as _,
                 len,
                 match default_char {
-                    Some(_) => default_char_ref.as_ptr(),
-                    None => null(),
+                    Some(_) => default_char_ref.as_ptr() as _,
+                    None => ptr::null(),
                 },
                 if use_default_char_flag {
                     use_char_ref.as_mut_ptr()
                 } else {
-                    null_mut()
+                    ptr::null_mut()
                 },
             );
             if (len as usize) == astr.len() {
@@ -198,9 +186,6 @@ pub fn wide_char_to_multi_byte(
         Err(Error::last_os_error())
     }
 }
-
-#[cfg(test)]
-use winapi::um::winnls::*;
 
 #[test]
 fn multi_byte_to_wide_char_empty() {

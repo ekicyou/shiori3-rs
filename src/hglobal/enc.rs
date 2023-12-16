@@ -21,7 +21,7 @@
 
 use super::windows;
 use std::io::Result;
-use winapi::um::winnls::{CP_ACP, CP_OEMCP};
+use windows_sys::Win32::Globalization::*;
 
 /// Converter between string and multibyte encoding.
 pub trait Encoder {

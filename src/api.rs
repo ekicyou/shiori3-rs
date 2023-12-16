@@ -3,9 +3,12 @@ use crate::hglobal::GStr;
 
 use log::*;
 use std::borrow::Cow;
+use std::ffi::c_void;
 use std::path::Path;
 use std::ptr;
-use winapi::shared::minwindef::{DWORD, HGLOBAL, LPVOID};
+use windows_sys::Win32::Foundation::*;
+
+type LPVOID = *mut c_void;
 
 pub trait Shiori3: Sized {
     /// load_dir pathのファイルでSHIORIインスタンスを作成します。
@@ -57,13 +60,13 @@ where
 }
 
 #[allow(dead_code)]
-const DLL_PROCESS_DETACH: DWORD = 0;
+const DLL_PROCESS_DETACH: u32 = 0;
 #[allow(dead_code)]
-const DLL_PROCESS_ATTACH: DWORD = 1;
+const DLL_PROCESS_ATTACH: u32 = 1;
 #[allow(dead_code)]
-const DLL_THREAD_ATTACH: DWORD = 2;
+const DLL_THREAD_ATTACH: u32 = 2;
 #[allow(dead_code)]
-const DLL_THREAD_DETACH: DWORD = 3;
+const DLL_THREAD_DETACH: u32 = 3;
 
 impl<T: Shiori3> RawShiori3<T> {
     /// shiori.dll:dllmain
@@ -71,7 +74,7 @@ impl<T: Shiori3> RawShiori3<T> {
     pub fn raw_dllmain(
         &mut self,
         h_inst: usize,
-        ul_reason_for_call: DWORD,
+        ul_reason_for_call: u32,
         _lp_reserved: LPVOID,
     ) -> bool {
         match ul_reason_for_call {

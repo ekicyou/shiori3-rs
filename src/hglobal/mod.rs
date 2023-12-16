@@ -5,13 +5,12 @@ mod windows;
 use self::enc::{Encoder, Encoding};
 use crate::error::*;
 use std::ffi::OsString;
+use std::slice::{from_raw_parts, from_raw_parts_mut};
 use std::str;
-use winapi::_core::slice::{from_raw_parts, from_raw_parts_mut};
-use winapi::shared::minwindef::{HGLOBAL, UINT};
-use winapi::um::winbase::{GlobalAlloc, GlobalFree};
-use winapi::vc::vcruntime::size_t;
+use windows_sys::Win32::Foundation::*;
+use windows_sys::Win32::System::Memory::*;
 
-const GMEM_FIXED: UINT = 0;
+const GMEM_FIXED: u32 = 0;
 
 /// HGLOBALを文字列にキャプチャーします。
 pub struct GStr {
@@ -47,7 +46,7 @@ impl GStr {
     fn clone_from_slice_impl(bytes: &[u8], has_free: bool) -> GStr {
         let len = bytes.len();
         unsafe {
-            let h = GlobalAlloc(GMEM_FIXED, len as size_t);
+            let h = GlobalAlloc(GMEM_FIXED, len as _);
             let p = h as *mut u8;
             let dst = from_raw_parts_mut::<u8>(p, len);
             dst[..].clone_from_slice(bytes);
