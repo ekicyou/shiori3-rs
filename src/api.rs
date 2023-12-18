@@ -1,5 +1,5 @@
 use crate::error::MyError;
-use crate::hglobal::ShioriStr;
+use crate::hglobal::ShioriString;
 
 use log::*;
 use std::borrow::Cow;
@@ -107,7 +107,7 @@ impl<T: Shiori3> RawShiori3<T> {
         }
     }
     fn raw_load_impl(&mut self, hdir: HGLOBAL, len: usize) -> Result<(), anyhow::Error> {
-        let gdir = ShioriStr::capture(hdir, len);
+        let gdir = ShioriString::capture(hdir, len);
         let load_dir = gdir.to_ansi_str()?;
         let load_dir_bytes = gdir.as_bytes();
         let shiori = Shiori3DI::<T>::load(self.h_inst, load_dir, load_dir_bytes)?;
@@ -135,14 +135,14 @@ impl<T: Shiori3> RawShiori3<T> {
         hreq: HGLOBAL,
         len: usize,
     ) -> Result<(HGLOBAL, usize), anyhow::Error> {
-        let greq = ShioriStr::capture(hreq, len);
+        let greq = ShioriString::capture(hreq, len);
         let req = greq.to_utf8_str()?;
         let res = {
             let shiori = self.shiori.as_mut().ok_or(MyError::NotInitialized)?;
             shiori.request(req)?
         };
         let res_bytes = res.as_bytes();
-        let gres = ShioriStr::clone_from_slice_nofree(res_bytes);
+        let gres = ShioriString::clone_from_slice_nofree(res_bytes);
         Ok(gres.value())
     }
 }
