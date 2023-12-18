@@ -9,4 +9,5 @@ pub use crate::error::MyError as ShioriError;
 pub use crate::error::MyResult as ShioriResult;
 pub use crate::hglobal::enc::Encoder;
 pub use crate::hglobal::enc::Encoding;
+pub use crate::hglobal::ShioriStr;
 pub use crate::parsers::req;

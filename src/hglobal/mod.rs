@@ -13,13 +13,13 @@ use windows_sys::Win32::System::Memory::*;
 const GMEM_FIXED: u32 = 0;
 
 /// HGLOBALを文字列にキャプチャーします。
-pub struct GStr {
+pub struct ShioriStr {
     h: HGLOBAL,
     len: usize,
     has_free: bool,
 }
 
-impl Drop for GStr {
+impl Drop for ShioriStr {
     fn drop(&mut self) {
         if !self.has_free {
             return;
@@ -30,12 +30,12 @@ impl Drop for GStr {
     }
 }
 
-impl GStr {
+impl ShioriStr {
     /// HGLOBALをGStrにキャプチャーします。
     /// drop時にHGLOBALを開放します。
     /// shiori::load/requestのHGLOBAL受け入れに利用してください。
-    pub fn capture(h: HGLOBAL, len: usize) -> GStr {
-        GStr {
+    pub fn capture(h: HGLOBAL, len: usize) -> ShioriStr {
+        ShioriStr {
             h,
             len,
             has_free: true,
@@ -43,40 +43,40 @@ impl GStr {
     }
 
     /// &[u8]をHGLOBAL領域にコピーして返す。
-    fn clone_from_slice_impl(bytes: &[u8], has_free: bool) -> GStr {
+    fn clone_from_slice_impl(bytes: &[u8], has_free: bool) -> ShioriStr {
         let len = bytes.len();
         unsafe {
             let h = GlobalAlloc(GMEM_FIXED, len as _);
             let p = h as *mut u8;
             let dst = from_raw_parts_mut::<u8>(p, len);
             dst[..].clone_from_slice(bytes);
-            GStr { h, len, has_free }
+            ShioriStr { h, len, has_free }
         }
     }
 
     /// HGLOBALを新たに作成し、&[u8]をGStrにクローンします。
     /// drop時にHGLOBALを開放しません。
     /// shiori応答の作成に利用してください。
-    pub fn clone_from_slice_nofree(bytes: &[u8]) -> GStr {
-        GStr::clone_from_slice_impl(bytes, false)
+    pub fn clone_from_slice_nofree(bytes: &[u8]) -> ShioriStr {
+        ShioriStr::clone_from_slice_impl(bytes, false)
     }
 
     /// HGLOBALを新たに作成し、textをGStrにクローンします。
     /// drop時にHGLOBALを開放します。
     #[allow(dead_code)]
-    pub fn clone_from_str<'a, S: Into<&'a str>>(text: S) -> GStr {
+    pub fn clone_from_str<'a, S: Into<&'a str>>(text: S) -> ShioriStr {
         let s = text.into();
         let bytes = s.as_bytes();
-        GStr::clone_from_slice_impl(bytes, true)
+        ShioriStr::clone_from_slice_impl(bytes, true)
     }
 
     /// HGLOBALを新たに作成し、textをGStrにクローンします。
     /// drop時にHGLOBALを開放しません。
     #[allow(dead_code)]
-    pub fn clone_from_str_nofree<'a, S: Into<&'a str>>(text: S) -> GStr {
+    pub fn clone_from_str_nofree<'a, S: Into<&'a str>>(text: S) -> ShioriStr {
         let s = text.into();
         let bytes = s.as_bytes();
-        GStr::clone_from_slice_impl(bytes, false)
+        ShioriStr::clone_from_slice_impl(bytes, false)
     }
 
     /// 要素を&[u8]として参照します。
@@ -129,23 +129,23 @@ impl GStr {
 fn gstr_test() {
     {
         let text = "適当なGSTR";
-        let src = GStr::clone_from_slice_nofree(text.as_bytes());
+        let src = ShioriStr::clone_from_slice_nofree(text.as_bytes());
         assert_eq!(src.to_utf8_str().unwrap(), text);
         assert_eq!(src.len(), 13);
 
-        let dst = GStr::capture(src.handle(), src.len());
+        let dst = ShioriStr::capture(src.handle(), src.len());
         assert_eq!(dst.to_utf8_str().unwrap(), text);
     }
     {
         let text = "適当なGSTR";
         let sjis = Encoding::ANSI.to_bytes(text).unwrap();
         assert_eq!(sjis.len(), 10);
-        let src = GStr::clone_from_slice_nofree(&sjis[..]);
+        let src = ShioriStr::clone_from_slice_nofree(&sjis[..]);
         assert_eq!(src.len(), 10);
         let src_osstr = src.to_ansi_str().unwrap();
         assert_eq!(src_osstr.len(), 13);
 
-        let dst = GStr::capture(src.handle(), src.len());
+        let dst = ShioriStr::capture(src.handle(), src.len());
         assert_eq!(src_osstr, dst.to_ansi_str().unwrap());
 
         let src_str = src_osstr.to_str().unwrap();
