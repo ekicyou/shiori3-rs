@@ -19,7 +19,7 @@
 //! original: https://github.com/bozaro/local-encoding-rs/blob/master/src/lib.rs
 #![allow(dead_code)]
 
-use super::windows;
+use super::windows_api;
 use std::io::Result;
 use windows_sys::Win32::Globalization::*;
 
@@ -56,11 +56,11 @@ impl CodePage for Encoding {
 impl Encoder for Encoding {
     /// Convert from bytes to string.
     fn to_string(self: &Self, data: &[u8]) -> Result<String> {
-        windows::EncoderCodePage(self.codepage()).to_string(data)
+        windows_api::EncoderCodePage(self.codepage()).to_string(data)
     }
     /// Convert from bytes to string.
     fn to_bytes(self: &Self, data: &str) -> Result<Vec<u8>> {
-        windows::EncoderCodePage(self.codepage()).to_bytes(data)
+        windows_api::EncoderCodePage(self.codepage()).to_bytes(data)
     }
 }
 

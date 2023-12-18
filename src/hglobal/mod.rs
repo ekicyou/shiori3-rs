@@ -1,6 +1,6 @@
 #![cfg(any(windows))]
 pub mod enc;
-mod windows;
+mod windows_api;
 
 use self::enc::{Encoder, Encoding};
 use crate::error::*;
