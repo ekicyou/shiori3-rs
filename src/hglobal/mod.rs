@@ -34,7 +34,7 @@ impl Drop for ShioriString {
 }
 
 impl ShioriString {
-    /// HGLOBALをGStrにキャプチャーします。
+    /// HGLOBALをShioriStringにキャプチャーします。
     /// drop時にHGLOBALを開放します。
     /// shiori::load/requestのHGLOBAL受け入れに利用してください。
     pub fn capture(h: HGLOBAL, len: usize) -> ShioriString {
@@ -57,14 +57,14 @@ impl ShioriString {
         }
     }
 
-    /// HGLOBALを新たに作成し、&[u8]をGStrにクローンします。
+    /// HGLOBALを新たに作成し、&[u8]をShioriStringにクローンします。
     /// drop時にHGLOBALを開放しません。
     /// shiori応答の作成に利用してください。
     pub fn clone_from_slice_nofree(bytes: &[u8]) -> ShioriString {
         ShioriString::clone_from_slice_impl(bytes, false)
     }
 
-    /// HGLOBALを新たに作成し、textをGStrにクローンします。
+    /// HGLOBALを新たに作成し、textをShioriStringにクローンします。
     /// drop時にHGLOBALを開放します。
     #[allow(dead_code)]
     pub fn clone_from_str<S: AsRef<str>>(text: S) -> ShioriString {
@@ -73,7 +73,7 @@ impl ShioriString {
         ShioriString::clone_from_slice_impl(bytes, true)
     }
 
-    /// HGLOBALを新たに作成し、textをGStrにクローンします。
+    /// HGLOBALを新たに作成し、textをShioriStringにクローンします。
     /// drop時にHGLOBALを開放しません。
     #[allow(dead_code)]
     pub fn clone_from_str_nofree<'a, S: Into<&'a str>>(text: S) -> ShioriString {
@@ -129,24 +129,24 @@ impl ShioriString {
 }
 
 #[test]
-fn gstr_test() {
+fn ShioriString_test() {
     {
-        let text = "適当なGSTR";
+        let text = "適当なShioriString";
         let src = ShioriString::clone_from_slice_nofree(text.as_bytes());
         assert_eq!(src.to_utf8_str().unwrap(), text);
-        assert_eq!(src.len(), 13);
+        assert_eq!(src.len(), 21);
 
         let dst = ShioriString::capture(src.handle(), src.len());
         assert_eq!(dst.to_utf8_str().unwrap(), text);
     }
     {
-        let text = "適当なGSTR";
+        let text = "適当なShioriString";
         let sjis = Encoding::ANSI.to_bytes(text).unwrap();
-        assert_eq!(sjis.len(), 10);
+        assert_eq!(sjis.len(), 18);
         let src = ShioriString::clone_from_slice_nofree(&sjis[..]);
-        assert_eq!(src.len(), 10);
+        assert_eq!(src.len(), 18);
         let src_osstr = src.to_ansi_str().unwrap();
-        assert_eq!(src_osstr.len(), 13);
+        assert_eq!(src_osstr.len(), 21);
 
         let dst = ShioriString::capture(src.handle(), src.len());
         assert_eq!(src_osstr, dst.to_ansi_str().unwrap());
@@ -155,24 +155,24 @@ fn gstr_test() {
         assert_eq!(src_str, text);
     }
     {
-        let text = "適当なGSTR";
+        let text = "適当なShioriString";
         let src = ShioriString::clone_from_str(text);
         assert_eq!(src.to_utf8_str().unwrap(), text);
     }
     {
-        let text = "適当なGSTR";
+        let text = "適当なShioriString";
         let string = text.to_owned();
         let src = ShioriString::clone_from_str(&*string);
         assert_eq!(src.to_utf8_str().unwrap(), text);
     }
     {
-        let text = "適当なGSTR";
+        let text = "適当なShioriString";
         let string = text.to_owned();
         let src = ShioriString::clone_from_str(string);
         assert_eq!(src.to_utf8_str().unwrap(), text);
     }
     {
-        let text = "適当なGSTR";
+        let text = "適当なShioriString";
         let string = text.to_owned();
         let src = ShioriString::clone_from_str(&string);
         assert_eq!(src.to_utf8_str().unwrap(), text);
