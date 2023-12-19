@@ -67,8 +67,8 @@ impl ShioriString {
     /// HGLOBALを新たに作成し、textをGStrにクローンします。
     /// drop時にHGLOBALを開放します。
     #[allow(dead_code)]
-    pub fn clone_from_str<'a, S: Into<&'a str>>(text: S) -> ShioriString {
-        let s = text.into();
+    pub fn clone_from_str<S: AsRef<str>>(text: S) -> ShioriString {
+        let s = text.as_ref();
         let bytes = s.as_bytes();
         ShioriString::clone_from_slice_impl(bytes, true)
     }
@@ -163,6 +163,18 @@ fn gstr_test() {
         let text = "適当なGSTR";
         let string = text.to_owned();
         let src = ShioriString::clone_from_str(&*string);
+        assert_eq!(src.to_utf8_str().unwrap(), text);
+    }
+    {
+        let text = "適当なGSTR";
+        let string = text.to_owned();
+        let src = ShioriString::clone_from_str(string);
+        assert_eq!(src.to_utf8_str().unwrap(), text);
+    }
+    {
+        let text = "適当なGSTR";
+        let string = text.to_owned();
+        let src = ShioriString::clone_from_str(&string);
         assert_eq!(src.to_utf8_str().unwrap(), text);
     }
 }
