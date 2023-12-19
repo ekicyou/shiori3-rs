@@ -19,6 +19,9 @@ pub struct ShioriString {
     has_free: bool,
 }
 
+unsafe impl Sync for ShioriString{}
+unsafe impl Send for ShioriString{}
+
 impl Drop for ShioriString {
     fn drop(&mut self) {
         if !self.has_free {
