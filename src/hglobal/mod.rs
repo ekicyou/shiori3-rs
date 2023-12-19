@@ -19,8 +19,8 @@ pub struct ShioriString {
     has_free: bool,
 }
 
-unsafe impl Sync for ShioriString{}
-unsafe impl Send for ShioriString{}
+unsafe impl Sync for ShioriString {}
+unsafe impl Send for ShioriString {}
 
 impl Drop for ShioriString {
     fn drop(&mut self) {
@@ -153,5 +153,16 @@ fn gstr_test() {
 
         let src_str = src_osstr.to_str().unwrap();
         assert_eq!(src_str, text);
+    }
+    {
+        let text = "適当なGSTR";
+        let src = ShioriString::clone_from_str(text);
+        assert_eq!(src.to_utf8_str().unwrap(), text);
+    }
+    {
+        let text = "適当なGSTR";
+        let string = text.to_owned();
+        let src = ShioriString::clone_from_str(&*string);
+        assert_eq!(src.to_utf8_str().unwrap(), text);
     }
 }
