@@ -13,6 +13,7 @@ use windows_sys::Win32::System::Memory::*;
 const GMEM_FIXED: u32 = 0;
 
 /// HGLOBALを文字列にキャプチャーします。
+#[derive(Debug, PartialEq)]
 pub struct ShioriString {
     h: HGLOBAL,
     len: usize,
