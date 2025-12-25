@@ -8,7 +8,6 @@ use std::ffi::OsStr;
 use std::io::{Error, ErrorKind, Result};
 use std::os::windows::ffi::OsStrExt;
 use std::ptr;
-use windows_sys::Win32::Foundation::*;
 use windows_sys::Win32::Globalization::*;
 
 /// Always use precomposed characters, that is, characters having a single character value for
@@ -168,7 +167,7 @@ pub fn wide_char_to_multi_byte(
                 Some(c) => [c as i8],
                 None => [0],
             };
-            let mut use_char_ref: [BOOL; 1] = [0];
+            let mut use_char_ref: [i32; 1] = [0];
             let len = WideCharToMultiByte(
                 codepage,
                 flags,

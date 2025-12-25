@@ -22,7 +22,7 @@ features = [
   "Win32_System_Memory",
   "Win32_Globalization",
 ]
-version = "0.52.0"
+version = "0.61.2"
 
 [dev-dependencies]
 env_logger = "0.11.8"
