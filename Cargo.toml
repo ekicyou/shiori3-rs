@@ -1,7 +1,7 @@
 [package]
 authors = ["ekicyou <dot.station@gmail.com>"]
 description = "SHIORI/3.0 rust interface."
-edition = "2021"
+edition = "2024"
 keywords = ["ghost", "shiori", "ukagaka"]
 license = "MIT"
 name = "shiori3"

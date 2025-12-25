@@ -20,7 +20,7 @@ pub enum MyError {
     Poison,
 
     #[error("Shiori request parse error for '{0}'")]
-    ParseRequest(parsers::req::ParseError),
+    ParseRequest(Box<parsers::req::ParseError>),
 
     #[error("ANSI encodeing error")]
     EncodeAnsi,
@@ -33,7 +33,7 @@ pub enum MyError {
 
 impl From<parsers::req::ParseError> for MyError {
     fn from(error: parsers::req::ParseError) -> MyError {
-        MyError::ParseRequest(error)
+        MyError::ParseRequest(Box::new(error))
     }
 }
 

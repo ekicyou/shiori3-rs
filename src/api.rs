@@ -8,6 +8,7 @@ use std::path::Path;
 use std::ptr;
 use windows_sys::Win32::Foundation::*;
 
+#[allow(clippy::upper_case_acronyms)]
 type LPVOID = *mut c_void;
 
 pub trait Shiori3: Sized {
@@ -48,7 +49,6 @@ impl<T: Shiori3> Shiori3 for Shiori3DI<T> {
 }
 
 /// SHIORI DLL API
-
 #[allow(dead_code)]
 #[derive(Default)]
 pub struct RawShiori3<T>

@@ -41,12 +41,12 @@ pub struct EncoderCodePage(pub u32);
 
 impl Encoder for EncoderCodePage {
     ///     Convert from bytes to string.
-    fn to_string(self: &Self, data: &[u8]) -> Result<String> {
+    fn to_string(&self, data: &[u8]) -> Result<String> {
         multi_byte_to_wide_char(self.0, MB_ERR_INVALID_CHARS, data)
     }
 
     /// Convert from string to bytes.
-    fn to_bytes(self: &Self, data: &str) -> Result<Vec<u8>> {
+    fn to_bytes(&self, data: &str) -> Result<Vec<u8>> {
         string_to_multibyte(self.0, data, None)
     }
 }
@@ -54,11 +54,11 @@ impl Encoder for EncoderCodePage {
 /// Convert String to 8-bit string.
 ///
 /// * `codepage`     - Code page to use in performing the conversion. This parameter can be set to
-///                    the value of any code page that is installed or available in the operating
-///                    system.
+///   the value of any code page that is installed or available in the operating
+///   system.
 /// * `data`         - Source string.
 /// * `default_char` - Optional character for replace to use if a character cannot be represented
-///                    in the specified code page.
+///   in the specified code page.
 ///
 /// Returns `Err` if an invalid input character is encountered and `default_char` is `None`.
 pub fn string_to_multibyte(codepage: u32, data: &str, default_char: Option<u8>) -> Result<Vec<u8>> {
@@ -103,8 +103,13 @@ pub fn multi_byte_to_wide_char(codepage: u32, flags: u32, multi_byte_str: &[u8])
         );
         if len > 0 {
             // Convert to UTF-16
-            let mut wstr: Vec<u16> = Vec::with_capacity(len as usize);
-            wstr.set_len(len as usize);
+            // SAFETY: MultiByteToWideChar will fully initialize the buffer up to `len` elements.
+            #[allow(clippy::uninit_vec)]
+            let mut wstr: Vec<u16> = {
+                let mut v = Vec::with_capacity(len as usize);
+                v.set_len(len as usize);
+                v
+            };
             let len = MultiByteToWideChar(
                 codepage,
                 flags,
@@ -152,8 +157,13 @@ pub fn wide_char_to_multi_byte(
 
         if len > 0 {
             // Convert from UTF-16 to multibyte
-            let mut astr: Vec<u8> = Vec::with_capacity(len as usize);
-            astr.set_len(len as usize);
+            // SAFETY: WideCharToMultiByte will fully initialize the buffer up to `len` elements.
+            #[allow(clippy::uninit_vec)]
+            let mut astr: Vec<u8> = {
+                let mut v = Vec::with_capacity(len as usize);
+                v.set_len(len as usize);
+                v
+            };
             let default_char_ref: [i8; 1] = match default_char {
                 Some(c) => [c as i8],
                 None => [0],

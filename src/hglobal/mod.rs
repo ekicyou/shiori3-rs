@@ -1,4 +1,4 @@
-#![cfg(any(windows))]
+#![cfg(windows)]
 pub mod enc;
 mod windows_api;
 
@@ -103,6 +103,12 @@ impl ShioriString {
         self.len
     }
 
+    /// 領域が空かどうかを返します。
+    #[allow(dead_code)]
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
     /// (HGLOBAL,len)を取得します。
     #[allow(dead_code)]
     pub fn value(&self) -> (HGLOBAL, usize) {
@@ -130,7 +136,7 @@ impl ShioriString {
 }
 
 #[test]
-fn ShioriString_test() {
+fn shiori_string_test() {
     {
         let text = "適当なShioriString";
         let src = ShioriString::clone_from_slice_nofree(text.as_bytes());

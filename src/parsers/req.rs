@@ -31,7 +31,7 @@ impl<'a> ShioriRequest<'a> {
     pub fn parse(text: &'a str) -> MyResult<ShioriRequest<'a>> {
         let rc = ShioriRequest::new(text);
         let it = Parser::parse(Rule::req, text)?.flatten();
-        Ok(rc.parse1(it)?)
+        rc.parse1(it)
     }
 
     #[allow(dead_code)]
