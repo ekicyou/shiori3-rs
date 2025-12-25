@@ -1,7 +1,7 @@
 use crate::error::*;
 use pest;
-use pest::iterators::FlatPairs;
 use pest::Parser as PestParser;
+use pest::iterators::FlatPairs;
 use std::collections::HashMap;
 
 pub use super::req_parser::Rule;
