@@ -12,8 +12,8 @@ version = "0.6.5"
 [dependencies]
 anyhow = "1.0.100"
 log = "0.4.29"
-pest = "2.7.5"
-pest_derive = "2.7.5"
+pest = "2.8.4"
+pest_derive = "2.8.4"
 thiserror = "1.0.51"
 
 [target."cfg(windows)".dependencies.windows-sys]
