@@ -4,8 +4,8 @@
 
 ### Phase 1: Edition & Patch Upgrades
 
-- [ ] 1. Rust Edition 2024 移行
-- [ ] 1.1 Edition 2024 への変更と検証
+- [x] 1. Rust Edition 2024 移行
+- [x] 1.1 Edition 2024 への変更と検証
   - Cargo.toml の edition フィールドを "2024" に変更
   - `cargo build` でコンパイル成功確認
   - `cargo clippy --all` で新規警告を確認・対応
@@ -13,8 +13,8 @@
   - 変更をコミット
   - _Requirements: 1_
 
-- [ ] 2. パッチバージョン依存関係のアップグレード
-- [ ] 2.1 (P) anyhow を 1.0.100 にアップグレード
+- [x] 2. パッチバージョン依存関係のアップグレード
+- [x] 2.1 (P) anyhow を 1.0.100 にアップグレード
   - Cargo.toml の anyhow バージョンを "1.0.100" に変更
   - `cargo build` でコンパイル成功確認
   - src/error.rs, src/api.rs の Result 型互換性確認
@@ -22,7 +22,7 @@
   - 変更をコミット
   - _Requirements: 2_
 
-- [ ] 2.2 (P) log を 0.4.29 にアップグレード
+- [x] 2.2 (P) log を 0.4.29 にアップグレード
   - Cargo.toml の log バージョンを "0.4.29" に変更
   - `cargo build` でコンパイル成功確認
   - src/api.rs のログマクロ互換性確認
@@ -30,7 +30,7 @@
   - 変更をコミット
   - _Requirements: 3_
 
-- [ ] 2.3 (P) env_logger を 0.11.8 にアップグレード
+- [x] 2.3 (P) env_logger を 0.11.8 にアップグレード
   - Cargo.toml の [dev-dependencies] env_logger バージョンを "0.11.8" に変更
   - `cargo build` でコンパイル成功確認
   - Logger 初期化の互換性確認
@@ -40,8 +40,8 @@
 
 ### Phase 2: Minor Version Upgrades
 
-- [ ] 3. pest/pest_derive を 2.8.4 にアップグレード
-- [ ] 3.1 pest/pest_derive バージョン更新と検証
+- [x] 3. pest/pest_derive を 2.8.4 にアップグレード
+- [x] 3.1 pest/pest_derive バージョン更新と検証
   - Cargo.toml の pest, pest_derive バージョンを "2.8.4" に変更
   - `cargo build` で req_parser.rs 生成コード確認
   - src/parsers/req_parser.pest 構文の互換性確認
@@ -59,15 +59,15 @@
   - 変更をコミット
   - _Requirements: 4_
 
-- [ ] 4. windows-sys を 0.61.2 にアップグレード
-- [ ] 4.1 windows-sys API 互換性調査
+- [x] 4. windows-sys を 0.61.2 にアップグレード
+- [x] 4.1 windows-sys API 互換性調査
   - 0.52.0 と 0.61.2 の windows-sys docs で API signature を比較
   - GlobalAlloc, GlobalFree, MultiByteToWideChar, WideCharToMultiByte の型変更確認
   - src/hglobal/windows_api.rs の unsafe block で影響範囲を特定
   - 必要な修正内容を記録
   - _Requirements: 6_
 
-- [ ] 4.2 windows-sys バージョン更新と修正
+- [x] 4.2 windows-sys バージョン更新と修正
   - Cargo.toml の windows-sys バージョンを "0.61.2" に変更
   - タスク 4.1 で特定した修正を src/hglobal/windows_api.rs に適用
   - `cargo build` でコンパイル成功確認
@@ -87,8 +87,8 @@
 
 ### Phase 3: Staged thiserror Upgrade
 
-- [ ] 5. thiserror Stage 1: マイナー版最新 (1.0.69) へアップグレード
-- [ ] 5.1 thiserror 1.0.69 へのアップグレード
+- [x] 5. thiserror Stage 1: マイナー版最新 (1.0.69) へアップグレード
+- [x] 5.1 thiserror 1.0.69 へのアップグレード
   - Cargo.toml の thiserror バージョンを "1.0.69" に変更
   - `cargo build` でコンパイル成功確認
   - src/error.rs の #[derive(Error)] マクロ互換性確認
@@ -97,8 +97,8 @@
   - 変更をコミット
   - _Requirements: 5_
 
-- [ ] 6. thiserror Stage 2: メジャー版 (2.0.17) へのアップグレード (Optional)
-- [ ] 6.1 thiserror 2.0.17 互換性検証
+- [x] 6. thiserror Stage 2: メジャー版 (2.0.17) へのアップグレード (Optional)
+- [x] 6.1 thiserror 2.0.17 互換性検証
   - #[error] attribute syntax の変更有無を確認（macro 展開結果の比較）
   - #[source] / #[from] attribute の互換性を確認
   - Display/Debug trait 自動実装の動作を確認
@@ -106,7 +106,7 @@
   - 判断結果を記録（互換性問題の有無と修正難易度）
   - _Requirements: 5_
 
-- [ ] 6.2 thiserror 2.0.17 への更新または 1.0.69 維持の決定
+- [x] 6.2 thiserror 2.0.17 への更新または 1.0.69 維持の決定
   - タスク 6.1 の判断結果に基づき実行パスを選択
   - **2.0.17 採択パス**: すべての互換性チェックが ✅ の場合
     - Cargo.toml の thiserror バージョンを "2.0.17" に変更
@@ -121,8 +121,8 @@
 
 ### Phase 4: Version Update & Final Validation
 
-- [ ] 7. プロジェクトバージョンを 0.6.6 に更新
-- [ ] 7.1 バージョン更新と最終検証
+- [x] 7. プロジェクトバージョンを 0.6.6 に更新
+- [x] 7.1 バージョン更新と最終検証
   - Cargo.toml の version フィールドを "0.6.6" に変更
   - `cargo build --release` でリリースビルド成功確認
   - `cargo test` で既存テスト suite 全体が成功することを確認
@@ -130,7 +130,7 @@
   - 変更をコミット
   - _Requirements: 8_
 
-- [ ] 7.2* (Optional) 統合テストと受入基準の追加検証
+- [x] 7.2* (Optional) 統合テストと受入基準の追加検証
   - Requirement 1 の Acceptance Criteria (edition 2024 設定) 再確認
   - Requirement 2-7 の Acceptance Criteria (各依存関係アップグレード) 再確認
   - Requirement 8 の Acceptance Criteria (バージョン 0.6.6 反映) 再確認
